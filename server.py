@@ -23,6 +23,9 @@ def resp(conn):
         #cleanup telnet or other methods of input
         if data.endswith("\\r\\n"):
             data = data[:-4]
+        #android adds newline
+        if data.endswith("\\n"):
+            data = data[:-2]
         print("RECEIVED:",data)
         reply = b'OK;'
         try:
@@ -47,7 +50,11 @@ def resp(conn):
         if not data: 
             break
      
-        conn.sendall(reply + b"\n")
+        try:
+            conn.sendall(reply + b"\n")
+        except:
+            #client disconnected immediatly after submitting command
+            pass
      
     #came out of loop
     conn.close()

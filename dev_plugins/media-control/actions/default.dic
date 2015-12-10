@@ -1,20 +1,20 @@
-play (LINE song)
+[can you ,please ,why don't you ]play (LINE song)
   mediaControl "$song$"
-play[ <media,song,video>]
+[can you ,please ,why don't you ]play[ the][ <media,song,video,audio>]
   mediaControl play
-pause[ <media,song,video>]
+[can you ,please ,why don't you ]pause[ the][ <media,song,video,audio>]
   mediaControl pause
-stop[ <media,song,video>]
+stop[ the][ <media,song,video,audio>]
   mediaControl stop
-next[ <song,file,media,video>]
+next[ <song,file,media,video,track>]
   mediaControl next
-<previous,last>[ <song,file,media,video>]
+<previous,last>[ <song,file,media,video,track>]
   mediaControl prev
-[volume ]mute[ volume]
+[can you ,please ,why don't you ][volume ]mute[ volume]
   mediaControl volume_mute
-<<increase,raise,more,higher> volume,volume <up,increase,higher,raise>>
+[can you ,please ,why don't you ]<<increase,raise,more,higher,turn> volume,volume <up,increase,higher,raise>>
   mediaControl volume_up
-<<decrease,lower,less,down> volume,volume <decrease,lower,less,down>>
+[can you ,please ,why don't you ]<<decrease,lower,less,down,turn> volume,volume <decrease,lower,less,down>>
   mediaControl volume_down
 [what[ is][ <the,this>] ]<current[ly],playing,song>[ playing][ song][ is <playing,on,this>][ right][ now]
   mediaInfo
