@@ -1,0 +1,52 @@
+#!/usr/bin/env python3.4
+
+import settings,subprocess
+import os,sys,time
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Speak a string of text')
+parser.add_argument('text', type=str,
+                   help='text to say')
+parser.add_argument('--tts', type=str, dest='engine', help='specify a specific tts engine to use')
+args = parser.parse_args()
+
+if args.engine == None:
+    ini = settings.ini("~/.lispeak/main.ini")
+    command = ini.get("tts","engine")
+else:
+    command = args.engine
+
+#TODO get initial volume level of each sink and set them back to that value instead of moving them to max
+
+#get all applications that output audio
+p = subprocess.Popen(['pactl', 'list','sink-inputs'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+out, err = p.communicate()
+out = str(out,'UTF-8')
+start = 0
+locs = []
+while "#" in out[start:]:
+    loc = out.find("#",start)
+    text = out[loc+1]
+    plus = 2
+    while out[loc+plus] not in [" ","\n","D"]:
+        text += out[loc+plus]
+        plus = plus + 1
+    locs.append(text)
+    start = loc+1
+
+#turn down volume of other programs
+for e in range(65530,40000,-400):
+    for text in locs:
+        subprocess.call(["pactl","set-sink-input-volume",text,str(e)])
+
+#run tts command
+subprocess.getoutput("~/.lispeak/tts/"+command+" \""+args.text+"\"")
+
+#increase volume
+for e in range(40000,65535,400):
+    for text in locs:
+        subprocess.call(["pactl","set-sink-input-volume",text,str(e)])
+#reset volume
+for text in locs:
+    subprocess.call(["pactl","set-sink-input-volume",text,str(65535)])

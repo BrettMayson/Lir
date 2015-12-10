@@ -1,0 +1,20 @@
+play (LINE song)
+  mediaControl "$song$"
+play[ <media,song,video>]
+  mediaControl play
+pause[ <media,song,video>]
+  mediaControl pause
+stop[ <media,song,video>]
+  mediaControl stop
+next[ <song,file,media,video>]
+  mediaControl next
+<previous,last>[ <song,file,media,video>]
+  mediaControl prev
+[volume ]mute[ volume]
+  mediaControl volume_mute
+<<increase,raise,more,higher> volume,volume <up,increase,higher,raise>>
+  mediaControl volume_up
+<<decrease,lower,less,down> volume,volume <decrease,lower,less,down>>
+  mediaControl volume_down
+[what[ is][ <the,this>] ]<current[ly],playing,song>[ playing][ song][ is <playing,on,this>][ right][ now]
+  mediaInfo

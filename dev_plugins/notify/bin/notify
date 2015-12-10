@@ -1,0 +1,19 @@
+#!/usr/bin/env python3.4
+
+from gi.repository import GObject
+from gi.repository import Notify
+import urllib.request
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Display a notification')
+parser.add_argument('title', type=str, help='Title of notification')
+parser.add_argument('-b', dest="body", type=str, help='Body of notification', required=False)
+parser.add_argument('-i', dest="icon", type=str, help='Path to icon for noticiation')
+args = parser.parse_args()
+
+Notify.init("Lir")
+if args.icon.startswith("http"):
+    args.icon,headers = urllib.request.urlretrieve(args.icon)
+n = Notify.Notification.new(args.title, args.body, args.icon)
+n.show()

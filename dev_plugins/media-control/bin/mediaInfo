@@ -1,0 +1,38 @@
+#!/usr/bin/env python3.4
+
+def main():
+    import dbus,lir
+    bus = dbus.SessionBus()
+
+    proxy = False
+
+    #TODO Find some way of searching for MediaPlayer2 to add support for any mpris application
+    if bus.name_has_owner('org.gnome.Rhythmbox3'):
+	    proxy = bus.get_object('org.gnome.Rhythmbox3','/org/mpris/MediaPlayer2')
+    elif bus.name_has_owner('org.bansheeproject.Banshee'):
+	    proxy = bus.get_object('org.bansheeproject.Banshee','/org/mpris/MediaPlayer2')
+    if proxy != False:
+        properties_manager = dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
+        metadata = properties_manager.Get('org.mpris.MediaPlayer2.Player', 'Metadata')
+        state = properties_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
+        album = ""
+        title = ""
+        artist = ""
+        cover = ""
+        for each in metadata:
+            if each == "xesam:album":
+	            album = metadata[each]
+            elif each == "xesam:artist":
+	            artist = metadata[each][0]
+            elif each == "xesam:title":
+	            title = metadata[each]
+            elif each == "mpris:artUrl":
+                cover = metadata[each]
+        lir.display_notification(title,"Artist: "+artist+"\r\nAlbum: "+album,cover,title+" by "+artist)
+        print(title+" by "+artist)
+    else:
+	    lir.display_notification("Nothing Playing",speech=False)
+	    print("Nothing Playing")
+    
+if __name__ == "__main__":
+    main()

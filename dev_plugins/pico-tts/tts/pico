@@ -1,0 +1,7 @@
+#!/usr/bin/env python3.4
+
+import os,sys
+
+os.system("mkdir /tmp/LiSpeak_TTS")
+os.system("pico2wave --wave=/tmp/LiSpeak_TTS/audio.wav \""+sys.argv[1]+"\"")
+os.system("aplay /tmp/LiSpeak_TTS/audio.wav &> /dev/null")

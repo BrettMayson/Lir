@@ -1,0 +1,6 @@
+#pocketsphinx
+bison autoconf libtool automake python-dev swig
+python-pocketsphinx pocketsphinx-hmm-wsj1 pocketsphinx-lm-wsj
+
+#recorder
+sox
