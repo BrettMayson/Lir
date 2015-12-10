@@ -8,7 +8,6 @@ import lang
 def add_dictionary(path,name):
     path = fs.expand_path(path)
     mode = path.split("/")[-1].split(".")[0]
-    print(mode)
     fs.create("~/.lir/actions/"+mode+".dic")
     with open(fs.expand_path("~/.lir/actions/"+mode+".dic"),'a') as f:
         f.write("\n####\n#  "+name+"\n####\n")

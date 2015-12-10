@@ -2,6 +2,17 @@
 
 import os
 import shutil
+import subprocess
+
+DEBUG = False
+
+def debug(*text):
+    if DEBUG:
+        print("[DEBUG]",text)
+        
+def system(cmd):
+    with open(os.devnull, 'wb') as devnull:
+        subprocess.check_call(cmd, stdout=devnull, stderr=subprocess.STDOUT)
 
 def expand_path(path):
     #expand home directory
@@ -17,7 +28,7 @@ def move(src,dst):
     src = expand_path(src)
     dst = expand_path(dst)
     shutil.move(src,dst)
-    print(lang.get("files","move"),src,dst)
+    debug(lang.get("files","move"),src,dst)
     return True
 
 def copy(src,dst):
@@ -31,7 +42,7 @@ def copy(src,dst):
         for f in files:
             if not f.endswith("~"):
                 shutil.copy(os.path.join(src,f),os.path.join(dst,f))
-                print(lang.get("files","copy"),os.path.join(src,f),os.path.join(dst,f))
+                debug(lang.get("files","copy"),os.path.join(src,f),os.path.join(dst,f))
             
         for d in dirs:
             if copy(os.path.join(src,f),os.path.join(dst,f)) == False:
@@ -39,7 +50,7 @@ def copy(src,dst):
         return True
     elif os.path.isfile(src):
         shutil.copy(src,dst)
-        print(lang.get("files","copy"),src,dst)
+        debug(lang.get("files","copy"),src,dst)
         return True
     else:
         return False
@@ -50,11 +61,11 @@ def delete(path):
     if os.path.exists(path):
         if os.path.isdir(path):
             shutil.rmtree(path)
-            print(lang.get("files","delete_dir"),path)
+            debug(lang.get("files","delete_dir"),path)
             return True
         elif os.path.isfile(path):
             os.remove(path)
-            print(lang.get("files","delete_file"),path)
+            debug(lang.get("files","delete_file"),path)
             return True
         else:
             return False
@@ -70,7 +81,7 @@ def create_directory(directory):
     import lang
     directory = expand_path(directory)
     if not os.path.exists(directory):
-        print(lang.get("files","create_dir"),directory)
+        debug(lang.get("files","create_dir"),directory)
         os.makedirs(directory)
 
 def home():

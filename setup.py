@@ -5,6 +5,22 @@ import lang
 import settings
 import package_manager as pm
 
+import os
+import argparse
+
+parser = argparse.ArgumentParser(description='Setup Lir')
+parser.add_argument('--debug', type=bool, help='Display debug messages')
+args = parser.parse_args()
+
+if args.debug:
+    DEBUG = True
+else:
+    DEBUG = False
+
+def debug(*text):
+    if DEBUG:
+        print("[DEBUG]",text)
+
 def main():
     print(lang.get("setup","welcome"))
     print(lang.get("setup","info"))
@@ -34,10 +50,13 @@ def main():
         ini.set("general","name",input(lang.get("setup","name")))
         
     #make dictionary program
-    print(lang.get("setup","build"),"Dictionary")
+    debug(lang.get("setup","build"),"Dictionary")
     os.chdir("dictionary")
     fs.delete("dictionary")
-    os.system("make")
+    if DEBUG:
+        os.system("make")
+    else:
+        fs.system("make")
     os.chdir("../")
     fs.copy("dictionary/dictionary","~/.lir/dictionary")
         
@@ -53,6 +72,7 @@ def main():
         print()
         #ask if tts should be used
         ini.set("tts","read-responses",str(input("Do you want Lir to read out responses? [Y/N]").lower() == "y"))
+        print()
         
     if not pm.installFolder("dev_plugins/pico-tts"):
         print(lang.get("error","install"),"pico-tts")
@@ -86,7 +106,10 @@ def main():
     ini.set("server","host","127.0.0.1")
     ini.set("server","port","8090")
         
+    debug("Saving ini")
     ini.save()
+    print()
+    print(lang.get("setup","done"))
     
 if __name__ == "__main__":
     main()
