@@ -25,18 +25,19 @@ if args.port != None:
 else:
     PORT = int(info.get("server","port"))
 
-def display_notification(title,body=None,icon=None,speech=True):
+def display_notification(title,body=None,icon=None,speech=None):
     cmd = "notify \""+title+"\""
     if body != None:
         cmd += " -b \""+body+"\""
     if icon != None:
         cmd += " -i \""+icon+"\""
     resp = send_command(cmd)
-    if speech == True:
-        speak(title)
-    elif type(speech) == str:
-        speak(speech)
-    return resp
+    if info.get("tts","read-responses") == "True":
+        if type(speech) == str:
+            speak(speech)
+        else:
+            speak(title)
+        return resp
     
 def speak(text,engine=None):
     cmd = "say \""+text+"\""

@@ -48,7 +48,11 @@ def main():
         print(lang.get("error","install"),"espeak")
     else:
         ini.create_section("tts")
+        #right now espeak is the default tts engine
         ini.set("tts","engine","espeak")
+        print()
+        #ask if tts should be used
+        ini.set("tts","read-responses",str(input("Do you want Lir to read out responses? [Y/N]").lower() == "y"))
         
     if not pm.installFolder("dev_plugins/pico-tts"):
         print(lang.get("error","install"),"pico-tts")
