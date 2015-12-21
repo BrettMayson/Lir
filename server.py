@@ -77,7 +77,7 @@ def main():
     print ("Bind Complete.")
     
     s.listen(10)
-    print ("Socket Listening")
+    print ("Socket Listening on port " + str(PORT))
     
     listen = True
     while listen:
