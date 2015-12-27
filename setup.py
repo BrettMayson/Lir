@@ -63,6 +63,12 @@ def main():
     #Install required packages
     
     #Install default plugins
+    dev_plugins = os.listdir("dev_plugins")
+    for plugin in dev_plugins:
+        if not pm.installFolder("dev_plugins/" + plugin):
+            print(lang.get("error","install"), plugin)
+    
+    #FIXME install twice
     if not pm.installFolder("dev_plugins/espeak"):
         print(lang.get("error","install"),"espeak")
     else:
@@ -73,27 +79,6 @@ def main():
         #ask if tts should be used
         ini.set("tts","read-responses",str(input("Do you want Lir to read out responses? [Y/N]").lower() == "y"))
         print()
-        
-    if not pm.installFolder("dev_plugins/pico-tts"):
-        print(lang.get("error","install"),"pico-tts")
-    #else:
-    #    ini.create_section("tts")
-    #    ini.set("tts","engine","pico")
-        
-    if not pm.installFolder("dev_plugins/google-tts"):
-        print(lang.get("error","install"),"google-tts")
-    #else:
-    #    ini.create_section("tts")
-    #    ini.set("tts","engine","google-tts")
-        
-    if not pm.installFolder("dev_plugins/say"):
-        print(lang.get("error","install"),"say")
-        
-    if not pm.installFolder("dev_plugins/notify"):
-        print(lang.get("error","install"),"notify")
-        
-    if not pm.installFolder("dev_plugins/media-control"):
-        print(lang.get("error","install"),"media-control")
         
     #copy needed python scripts
     for f in ["settings.py","lang.py","fs.py","lir.py"]:
