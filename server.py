@@ -199,7 +199,7 @@ def main():
     print ("Starting Signal Check")
     
     s.listen(10)
-    print ("Socket Listening")
+    print ("Socket Listening on port " + str(PORT))
     
     start_new_thread(signal_check, ())
     
