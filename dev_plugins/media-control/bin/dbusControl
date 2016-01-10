@@ -1,0 +1,22 @@
+#!/usr/bin/env python3.4
+
+def main():
+    import dbus,sys
+    bus = dbus.SessionBus()
+
+    player = sys.argv[1]
+    
+    proxy = dbus.SessionBus().get_object(player,"/org/mpris/MediaPlayer2")
+    interface = dbus.Interface(proxy, dbus_interface='org.mpris.MediaPlayer2.Player')
+    
+    action = sys.argv[2]
+    
+    if action == "next":
+        interface.Next()
+    elif action == "prev":
+        interface.Previous()
+    elif action == "play":
+        interface.PlayPause()
+    
+if __name__ == "__main__":
+    main()
