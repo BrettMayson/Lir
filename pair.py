@@ -2,6 +2,7 @@
 
 import socket,sys,platform,os
 
+import db
 import aes
 
 TEST_PHRASE = "lir is the best"
@@ -11,6 +12,7 @@ def _decrypt(data,iv):
     return f.decrypt(data,iv)
 
 def pair(conn):
+    ddb = db.DeviceDB("devices.db")
     #Receive pairing process version number
     version = int(readPlain(conn,1))
     print("Version:",version)
@@ -34,8 +36,18 @@ def pair(conn):
         #send hostname
         send(conn,socket.gethostname())
         #send os
-        send(conn,' '.join(platform.linux_distribution()[0:1]))
-        
+        send(conn,' '.join(platform.linux_distribution()[0:2]))
+        #receive hostname
+        host = read(conn)
+        print("HOST:",host)
+        #receive os
+        _os = read(conn)
+        print("OS:",_os)
+        #receive uid
+        _uid = read(conn)
+        _id = ddb.addDevice({"name" : host, "key" : key, "os" : _os, "uid" : _uid})
+        print("Row ID",_id)
+        ddb.close()
     
 def sendEnc(conn,text):
     f = aes.Factory(key)
@@ -47,14 +59,10 @@ def sendPlain(conn,text):
     conn.sendall(text.encode("UTF-8") + b'\n')
     
 def readEnc(conn):
-    #length = int(readPlain(conn,6)) - 1
-    #iv = readPlain(conn,length)
-    ##iv += '\n'
-    #length = int(readPlain(conn,6)) - 1
-    #enc = readPlain(conn,length)
-    ##enc += '\n'
     iv = readLine(conn)
+    print("IV:",iv)
     enc = readLine(conn)
+    print("ENC:",enc)
     return _decrypt(enc,iv)
 
 def readPlain(conn,n = None):

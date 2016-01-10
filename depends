@@ -4,3 +4,6 @@ python-pocketsphinx pocketsphinx-hmm-wsj1 pocketsphinx-lm-wsj
 
 #recorder
 sox
+
+#aes pair
+qrencode
