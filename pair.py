@@ -5,7 +5,7 @@ import socket,sys,platform,os
 import db
 import aes
 
-TEST_PHRASE = "lir is the best"
+TEST_PHRASE = {1 : "lir is the best"}
 
 def _decrypt(data,iv):
     f = aes.Factory(key)
@@ -30,9 +30,9 @@ def pair(conn):
             send = sendPlain
         else:
             print("1: Unexpected Value:",enc)
-        if read(conn) == TEST_PHRASE:
+        if read(conn) == TEST_PHRASE[1]:
             print("Receive Good")
-        send(conn,TEST_PHRASE)
+        send(conn,TEST_PHRASE[1])
         #send hostname
         send(conn,socket.gethostname())
         #send os

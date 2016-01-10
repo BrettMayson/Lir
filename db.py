@@ -23,11 +23,7 @@ class DeviceDB():
         return self.cur.lastrowid
         
     def getDeviceByID(self,_id):
-        self.cur.execute("SELECT * FROM devices WHERE id = ?",_id)
-        return self.cur.fetchone()
-        
-    def getDeviceByAddress(self,_ip):
-        self.cur.execute("SELECT * FROM devices WHERE ip = ?",_ip)
+        self.cur.execute("SELECT * FROM devices WHERE uid = ?",(_id,))
         return self.cur.fetchone()
         
     def close(self):
