@@ -11,13 +11,13 @@ TEST_PHRASE = {1 : "lir is the best"}
 def pair(conn):
     ddb = db.DeviceDB("devices.db")
     #Receive pairing process version number
-    version = int(device.readPlain(conn,1))
+    version = int(connection._readPlain(conn,1))
     print("Version:",version)
     if version == 1:
         #Will pair will be encrypted
         #1 - yes
         #0 - no
-        enc = readPlain(conn,1)
+        enc = connection._readPlain(conn,1)
         print("Encrypted:",enc == "1")
         device = connection.Device(conn,key,enc == "1")
         if device.read() == TEST_PHRASE[1]:

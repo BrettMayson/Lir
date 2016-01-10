@@ -23,12 +23,12 @@ class Device():
         _sendPlain(self.conn,text)
         
     def readEnc(self):
-        iv = self.readLine(self)
+        iv = self.readLine()
         print("IV:",iv)
-        enc = self.readLine(self)
+        enc = self.readLine()
         print("ENC:",enc)
         f = aes.Factory(self.key)
-        return f.decrypt(data,iv)
+        return f.decrypt(enc,iv)
 
     def readPlain(self,n = None):
         return _readPlain(self.conn)
@@ -53,7 +53,7 @@ def _readLine(conn):
             break
     return data
 
-def _readPlain(conn):
+def _readPlain(conn,n=None):
     data = ""
     if n != None:
         while len(data) < n:
