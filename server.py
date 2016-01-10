@@ -73,6 +73,8 @@ def resp(conn):
 		#Receiving from client
 		#TODO replace with buffer to receive large commands
 		data = pair.readLine(conn)
+		if data == "":
+			return
 		#data = str(data)[2:-1]
 		#cleanup telnet or other methods of input
 		if data.endswith("\\r\\n"):
@@ -97,6 +99,13 @@ def resp(conn):
 		except:
 			#client disconnected immediatly after submitting command
 			pass
+
+def handle(conn):
+	peer = conn.getpeername()
+	ip = peer[0]
+	port = str(peer[1])
+	resp(conn)
+	print("Disconnected",ip+":"+port)
 
 def signal_check():
 	while True:
@@ -131,7 +140,7 @@ def main():
 	while listen:
 		con,addr = s.accept()
 		print('Connected with ' + addr[0] + ':' + str(addr[1]))
-		start_new_thread(resp ,(con,))
+		start_new_thread(handle ,(con,))
 	
 if __name__ == "__main__":
 	main()
