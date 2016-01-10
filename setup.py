@@ -65,8 +65,10 @@ def main():
     #Install default plugins
     dev_plugins = os.listdir("dev_plugins")
     for plugin in dev_plugins:
-        if not pm.installFolder("dev_plugins/" + plugin):
-            print(lang.get("error","install"), plugin)
+        print(plugin)
+        if os.path.isdir("dev_plugins/" + plugin):
+            if not pm.installFolder("dev_plugins/" + plugin):
+                print(lang.get("error","install"), plugin)
     
     #FIXME install twice
     if not pm.installFolder("dev_plugins/espeak"):

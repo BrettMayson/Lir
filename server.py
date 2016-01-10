@@ -12,7 +12,7 @@ import subprocess
 import aes
 import db
 import settings
-#TODO create a connection class instead of import the pair script
+import connection
 import pair
 
 #listeners are clients waiting to receive updates from the server
@@ -25,80 +25,62 @@ def add_listener(sig,conn):
 	else:
 		listeners[sig] = [conn]
 	
-def action(mode,data,conn):
-	reply = b''
+def execute(command):
+	d = os.getcwd()
+	os.chdir(fs.home()+"/.lir/bin")
+	print("EXECUTING:",command)
+	out = subprocess.getoutput("./"+command)
+	os.chdir(d)
+	return out + "\n"
+	
+def action(mode,data,device):
 	command = None
 	#human speech for parsing with the dictionaries
 	if mode == "speech":
 		#TODO dictionaries active when certain programs running
 		#TODO dictionaries active when certain programs focused
-		command = subprocess.getoutput(fs.home()+"/.lir/dictionary \""+data+"\" "+fs.home()+"/.lir/actions/default.dic")
+		device.send(execute(subprocess.getoutput(fs.home()+"/.lir/dictionary \""+data+"\" "+fs.home()+"/.lir/actions/default.dic")))
 	#a direct command to be ran
 	elif mode == "direct":
-		command = data
+		device.send(execute(data))
 	#a client that wants updates
 	elif mode == "signal":
 		add_listener(data,conn)
-		command = None
 	#the message is encrypted
 	elif mode == "enc":
-		iv = pair.readLine(conn)
-		did = pair.readLine(conn)
+		iv = device.readLine()
+		did = device.readLine()
 		ddb = db.DeviceDB("devices.db")
-		device = ddb.getDeviceByID(did)
-		pair.key = device['key']
-		msg = pair._decrypt(data,iv)
+		ddata = ddb.getDeviceByID(did)
+		ddb.close()
+		device2 = connection.Device(device.conn,ddata['key'],True)
+		msg = device2.decrypt(data,iv)
 		try:
 			mode,msg = msg.split(":",1)
 		except:
 			mode = "speech"
-		action(mode,msg,conn)
-	else:
-		reply += b"UnknownMode;"
-	
-	if command != None:
-		d = os.getcwd()
-		os.chdir(fs.home()+"/.lir/bin")
-		print("EXECUTING:",command)
-		out = subprocess.getoutput("./"+command)+";"
-		reply += out.encode('utf-8')
-		os.chdir(d)
-		
-	return reply
+		action(mode,msg,device2)
 	
 def resp(conn):
-	#infinite loop so that function do not terminate and thread do not end.
-	onerun = False
-	while onerun == False:
-		#Receiving from client
-		#TODO replace with buffer to receive large commands
-		data = pair.readLine(conn)
-		if data == "":
-			return
-		#data = str(data)[2:-1]
-		#cleanup telnet or other methods of input
-		if data.endswith("\\r\\n"):
-			data = data[:-4]
-		#android adds newline
-		if data.endswith("\\n"):
-			data = data[:-2]
-		print("RECEIVED:",data)
-		reply = b'OK;'
-		try:
-			mode,data = data.split(":",1)
-		except:
-			mode = "speech"
-			
-		reply += action(mode,data,conn)
-			
-		if not data: 
-			break
-	 
-		try:
-			conn.sendall(reply + b"\n")
-		except:
-			#client disconnected immediatly after submitting command
-			pass
+	device = connection.Device(conn)
+	#Receiving from client
+	data = device.readLine()
+	if data == "":
+		return
+	#data = str(data)[2:-1]
+	#cleanup telnet or other methods of input
+	if data.endswith("\\r\\n"):
+		data = data[:-4]
+	#android adds newline
+	if data.endswith("\\n"):
+		data = data[:-2]
+	print("RECEIVED:",data)
+	try:
+		mode,data = data.split(":",1)
+	except:
+		mode = "speech"
+		
+	action(mode,data,device)
 
 def handle(conn):
 	peer = conn.getpeername()
