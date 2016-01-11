@@ -49,6 +49,10 @@ def main():
     except:
         ini.set("general","name",input(lang.get("setup","name")))
         
+    print("English is currently the only supported language. Head to http://github.com/BmanDesignsCanada/Lir to help translate to additional languages")
+    ini.set("general","language","en")
+    ini.save()
+        
     #make dictionary program
     debug(lang.get("setup","build"),"Dictionary")
     os.chdir("dictionary")

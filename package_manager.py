@@ -6,12 +6,13 @@ import tarfile
 import lang
 
 def add_dictionary(path,name):
+    info = settings.ini(fs.expand_path("~/.lir/main.ini"))
     path = fs.expand_path(path)
-    mode = path.split("/")[-1].split(".")[0]
+    mode = path.split("/")[-1]
     fs.create("~/.lir/actions/"+mode+".dic")
     with open(fs.expand_path("~/.lir/actions/"+mode+".dic"),'a') as f:
         f.write("\n####\n#  "+name+"\n####\n")
-        with open(path) as src:
+        with open(path+"/"+info.get("general","language")+".dic") as src:
             f.write(src.read())
         
 
@@ -34,7 +35,7 @@ def installCompressed(path):
                 print(lang.get("error","transfer"),fs.expand_path("/tmp/lir/"+s),fs.expand_path("~/.lir/"+s))
                 return False
     for dic in os.listdir("/tmp/lir/actions"):
-        if os.path.isfile("/tmp/lir/actions/"+dic):
+        if os.path.isdir("/tmp/lir/actions/"+dic):
             add_dictionary("/tmp/lir/actions/"+dic,info.get("info","name"))
     fs.delete("/tmp/lir")
     print(lang.get("install","done"),info.get("info","name"))
@@ -54,7 +55,7 @@ def installFolder(path):
                 return False
     if os.path.isdir(path+"/actions"):
         for dic in os.listdir(path+"/actions"):
-            if os.path.isfile(path+"/actions/"+dic) and not dic.endswith("~"):
+            if os.path.isdir(path+"/actions/"+dic):
                 add_dictionary(path+"/actions/"+dic,info.get("info","name"))
     print(lang.get("install","done"),info.get("info","name"))
     return True
