@@ -5,11 +5,12 @@ import socket,sys,platform,os
 import db
 import aes
 import connection
+import fs
 
 TEST_PHRASE = {1 : "lir is the best"}
 
 def pair(conn):
-    ddb = db.DeviceDB("devices.db")
+    ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
     #Receive pairing process version number
     version = int(connection._readPlain(conn,1))
     print("Version:",version)
@@ -62,8 +63,8 @@ def main():
     global key
     key = aes.generateRandom(16)
     #key = "aaaaaaaaaaaaaaaa"
-    os.system("qrencode -s 15 -o pair.png \""+key+"\"")
-    os.system("xdg-open pair.png")
+    os.system("qrencode -s 15 -o /tmp/lispeak/pair.png \""+key+"\"")
+    os.system("xdg-open /tmp/lispeak/pair.png")
     print ("Key: ",key)
     
     con,addr = s.accept()

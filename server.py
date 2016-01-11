@@ -50,7 +50,7 @@ def action(mode,data,device):
 	elif mode == "enc":
 		iv = device.readLine()
 		did = device.readLine()
-		ddb = db.DeviceDB("devices.db")
+		ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
 		ddata = ddb.getDeviceByID(did)
 		ddb.close()
 		device2 = connection.Device(device.conn,ddata['key'],True)
