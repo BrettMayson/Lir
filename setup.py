@@ -1,4 +1,11 @@
 #!/usr/bin/env python3.4
+import sys
+_version = float(str(sys.version_info[0]) + '.' + str(sys.version_info[1]))
+
+if _version < 3.0:
+	#to avoid syntax error in 3.0 +
+	exec("print \"Python 3.0 or higher is required\"")
+	sys.exit(1)
 
 import fs
 import lang
