@@ -230,7 +230,7 @@ class Installer(threading.Thread):
         #TODO add support for lots of terminal emulators and package managers
         if which("apt-get") != None:
             if which("gnome-terminal") != None:
-                os.system("gnome-terminal -x bash -c \"echo 'Installing Dependencies: "+(' '.join(depends))+"' && sudo apt-get install "+(' '.join(depends))+ "-y \"")
+                os.system("gnome-terminal -x bash -c \"echo 'Installing Dependencies: "+(' '.join(depends))+"' && sudo apt-get install "+(' '.join(depends))+ " -y \"")
             else:
                 print("Your system is not yet supported and you will need to install dependencies manually")
         else:
