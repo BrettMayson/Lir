@@ -7,7 +7,7 @@ if _version < 3.0:
 	exec("print \"Python 3.0 or higher is required\"")
 	sys.exit(1)
     
-import socket,platform,os
+import socket,platform,os,time
 
 import db
 import aes
@@ -70,7 +70,9 @@ def main():
     global key
     key = aes.generateRandom(16)
     #key = "aaaaaaaaaaaaaaaa"
+    os.system("mkdir /tmp/lispeak")
     os.system("qrencode -s 15 -o /tmp/lispeak/pair.png \""+key+"\"")
+    time.sleep(0.1)
     os.system("xdg-open /tmp/lispeak/pair.png")
     print ("Key: ",key)
     

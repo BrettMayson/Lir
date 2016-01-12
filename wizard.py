@@ -1,0 +1,275 @@
+#!/usr/bin/env python3.4
+import sys
+_version = float(str(sys.version_info[0]) + '.' + str(sys.version_info[1]))
+
+if _version < 3.0:
+	#to avoid syntax error in 3.0 +
+	exec("print \"Python 3.0 or higher is required\"")
+	sys.exit(1)
+    
+import os,configparser,pwd
+
+import threading
+
+import package_manager as pm
+import settings
+import fs
+    
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GdkPixbuf
+
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+class WindowHandler():
+    def __init__(self,builder):
+        self.builder = builder
+        
+        #Page 1 - Language
+        self.lang_store = Gtk.ListStore(str, str)
+        self.lang_store.append(["en", "English"])
+        self.builder.get_object("cmbLanguage").set_model(self.lang_store)
+        self.builder.get_object("cmbLanguage").set_active(0)
+        cell = Gtk.CellRendererText()
+        self.builder.get_object("cmbLanguage").pack_start(cell, True)
+        self.builder.get_object("cmbLanguage").add_attribute(cell, "text", 1)
+        
+        #page 2 - Packages
+        self.packages_list = Gtk.ListStore(bool,str,str,str)
+        dev_plugins = os.listdir("dev_plugins")
+        for plugin in dev_plugins:
+            if os.path.isdir("dev_plugins/"+plugin):
+                print(plugin)
+                info = settings.ini("dev_plugins/"+plugin+"/info.ini")
+                self.packages_list.append((True,info.get("info","name"),info.get("info","version"),info.get("info","author")))
+        self.tree = Gtk.TreeView.new_with_model(self.packages_list)
+        renderer = Gtk.CellRendererToggle()
+        renderer.connect("toggled", self.packageToggle, self.packages_list)
+        column = Gtk.TreeViewColumn("Install", renderer,active = 0)
+        self.tree.append_column(column)
+        for i,column_title in enumerate(["Name","Version","Author"]):
+            renderer = Gtk.CellRendererText()
+            column = Gtk.TreeViewColumn(column_title, renderer, text = i + 1)
+            self.tree.append_column(column)
+            
+        self.scrolltree = self.builder.get_object("scwTreeWrapper")
+        self.scrolltree.set_vexpand(True)
+        self.scrolltree.add(self.tree)
+        self.scrolltree.show_all()
+        
+        self.notebook = self.builder.get_object("nbkMain")
+        self.processPage()
+    
+    def windowClosed(self, *args):
+        print("Closing Window")
+        Gtk.main_quit(*args)
+
+    def prevPage(self, *args):
+        self.notebook.prev_page()
+        self.processPage()
+
+    def nextPage(self, *args):
+        if self.notebook.get_current_page() == 4:
+            Gtk.main_quit()
+        self.notebook.next_page()
+        self.processPage()
+    
+    def packageToggle(self, cell, path,model, *ignore):
+        if path is not None:
+            it = model.get_iter(path)
+            model[it][0] = not model[it][0]
+        
+    def processPage(self):
+        self.builder.get_object("btnNavLeftSecondary").hide()
+        page = self.notebook.get_current_page()
+        if page == 0:
+            self.builder.get_object("btnNavLeft").hide()
+            self.builder.get_object("lblTitle").set_text("Install Lir")
+            self.builder.get_object("imgBigLogo").set_from_file("interface/logo.png")
+            self.builder.get_object("lblWelcomeMessage").set_text("Welcome to Lir!\nLinux Interactive Requests\nThis wizard will help you install the desktop version of Lir")
+        elif page == 1:
+            self.builder.get_object("btnNavLeft").show()
+            self.builder.get_object("btnNavRight").set_label("Next")
+            self.builder.get_object("lblTitle").set_text("Select Language")
+            self.builder.get_object("lblLanguageMessage").set_text("Choose the language Lir will use.")
+        elif page == 2:
+            self.builder.get_object("btnNavLeft").show()
+            self.builder.get_object("btnNavRight").set_label("Install")
+            self.builder.get_object("lblTitle").set_text("Select Packages")
+        elif page == 3:
+            packages = []
+            root = self.packages_list.get_iter_first()
+            while root != None:
+                data = self.packages_list[root][:]
+                if data[0] == True:
+                    packages.append(data[1])
+                root = self.packages_list.iter_next(root)
+            print(packages)
+            self.builder.get_object("btnNavLeft").hide()
+            self.builder.get_object("btnNavRight").hide()
+            self.builder.get_object("lblTitle").set_text("Installing")
+            installer = Installer()
+            installer.progressbar = self.builder.get_object("pgbWorking")
+            installer.status = self.builder.get_object("lblWorkingMessage")
+            installer.packages = packages
+            installer.language = self.lang_store[self.builder.get_object("cmbLanguage").get_active()][0]
+            installer.done = self.nextPage
+            installer.start()
+        elif page == 4:
+            self.builder.get_object("btnNavRight").set_label("Close")
+            self.builder.get_object("btnNavRight").show()
+            self.builder.get_object("lblTitle").set_text("Done!")
+            self.builder.get_object("lblDoneMessage").set_text("Lir is ready to use!")
+            
+                
+class SetupWizard():
+    def __init__(self):
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file("interface/setup.glade")
+        handler = WindowHandler(self.builder)
+        self.builder.connect_signals(handler)
+        
+        self.window = self.builder.get_object("wndMain")
+        self.window.set_title("Lir Install Wizard")
+        self.window.set_icon_from_file("interface/logo.png")
+        self.window.show()
+
+class Installer(threading.Thread):
+    
+    stopthread = threading.Event()
+    
+    def run(self):
+        Gdk.threads_enter()
+        self.status.set_text("Preparing Folders")
+        self.progressbar.set_fraction(0.0)
+        Gdk.threads_leave()
+        #Create directories
+        fs.delete("~/.lir")
+        fs.create_directory("~/.lir")
+        for d in ["plugins","tts","stt","actions","services","bin","langs"]:
+            fs.create_directory("~/.lir/"+d)
+        fs.create("~/.lir/actions/default.dic")
+        fs.copy("langs","~/.lir/langs")
+        #copy needed python scripts
+        for f in ["settings.py","lang.py","fs.py","lir.py"]:
+            fs.copy(f,"~/.lir/bin")
+            fs.copy(f,"~/.lir/services")
+            fs.copy(f,"~/.lir/tts")
+            
+        ini = settings.ini("~/.lir/main.ini")
+        ini.create_section("general")
+        name = pwd.getpwuid(os.getuid())[4].replace(",","")
+        ini.set("general","name",name)
+        ini.set("general","language",self.language)
+        ini.create_section("tts")
+        ini.set("tts","engine","espeak")
+        ini.set("tts","read-responses","True")
+        ini.save()
+        
+        
+        Gdk.threads_enter()
+        self.status.set_text("Compiling")
+        self.progressbar.set_fraction(0.0)
+        Gdk.threads_leave()
+        #make dictionary program
+        os.chdir("dictionary")
+        fs.delete("dictionary")
+        fs.system("make")
+        os.chdir("../")
+        fs.copy("dictionary/dictionary","~/.lir/dictionary")
+        
+        Gdk.threads_enter()
+        self.status.set_text("Gathering Dependency Information")
+        self.progressbar.set_fraction(0.0)
+        Gdk.threads_leave()
+        depends = []
+        dev_plugins = os.listdir("dev_plugins")
+        x = 1
+        mx = len(dev_plugins)
+        for plugin in dev_plugins:
+            Gdk.threads_enter()
+            self.progressbar.set_fraction(x / mx)
+            Gdk.threads_leave()
+            if os.path.isdir("dev_plugins/"+plugin):
+                print(plugin)
+                info = settings.ini("dev_plugins/"+plugin+"/info.ini")
+                if info.get("info","name") in self.packages:
+                    for sec in ['info','tts']:
+                        if info.has_section(sec):
+                            try:
+                                dep = info.get(sec,"depends").split(',')
+                                for d in dep:
+                                    d = d.strip()
+                                    if d not in depends:
+                                        depends.append(d)
+                            except configparser.NoOptionError as e:
+                                print(e)
+            x += 1
+        print(depends)
+        
+        Gdk.threads_enter()
+        self.status.set_text("Installing Dependencies")
+        self.progressbar.set_fraction(0.0)
+        Gdk.threads_leave()
+        #TODO add support for lots of terminal emulators and package managers
+        if which("apt-get") != None:
+            if which("gnome-terminal") != None:
+                os.system("gnome-terminal -x bash -c \"echo 'Installing Dependencies: "+(' '.join(depends))+"' && sudo apt-get install "+(' '.join(depends))+ "-y \"")
+            else:
+                print("Your system is not yet supported and you will need to install dependencies manually")
+        else:
+            print("Your system is not yet supported and you will need to install dependencies manually")
+            
+        Gdk.threads_enter()
+        self.status.set_text("Installing Plugins")
+        self.progressbar.set_fraction(0.0)
+        Gdk.threads_leave()
+        x = 0
+        for plugin in dev_plugins:
+            x += 1
+            Gdk.threads_enter()
+            self.progressbar.set_fraction(x / mx)
+            Gdk.threads_leave()
+            if os.path.isdir("dev_plugins/"+plugin):
+                pm.installFolder("dev_plugins/" + plugin)
+                
+        Gdk.threads_enter()
+        self.status.set_text("Creating Settings File")
+        self.progressbar.set_fraction(0.0)
+        Gdk.threads_leave()
+        
+        #Create server info in config
+        ini.create_section("server")
+        ini.set("server","host","127.0.0.1")
+        ini.set("server","port","8090")
+        ini.save()
+        
+        Gdk.threads_enter()
+        self.status.set_text("Done")
+        self.done()
+        Gdk.threads_leave()
+        
+def main():
+    wizard = SetupWizard()
+    Gdk.threads_init()
+    
+    Gtk.main()
+    
+if __name__ == "__main__":
+    main()
