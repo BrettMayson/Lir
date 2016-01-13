@@ -198,7 +198,7 @@ class Installer(threading.Thread):
         self.status.set_text("Gathering Dependency Information")
         self.progressbar.set_fraction(0.0)
         Gdk.threads_leave()
-        depends = []
+        depends = ['sox','qrencode']
         dev_plugins = os.listdir("dev_plugins")
         x = 1
         mx = len(dev_plugins)
