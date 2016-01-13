@@ -4,12 +4,16 @@ import os
 import settings
 import fs
 import tarfile
+import sys
 
 def main():
     print("Package Creator")
     print("Brett Mayson - 1.0 - Dec 2015")
     
-    path = input("Path to plugin: ")
+    try:
+        path = sys.argv[1]
+    except:
+        path = input("Path to plugin: ")
     
     #expand short file paths
     fs.expand_path(path)
