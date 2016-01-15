@@ -162,7 +162,7 @@ class Installer(threading.Thread):
         #Create directories
         fs.delete("~/.lir")
         fs.create_directory("~/.lir")
-        for d in ["plugins","tts","stt","actions","services","bin","langs"]:
+        for d in ["plugins","tts","stt","actions","services","bin","langs","signals"]:
             fs.create_directory("~/.lir/"+d)
         fs.create("~/.lir/actions/default.dic")
         fs.copy("langs","~/.lir/langs")
@@ -171,6 +171,7 @@ class Installer(threading.Thread):
             fs.copy(f,"~/.lir/bin")
             fs.copy(f,"~/.lir/services")
             fs.copy(f,"~/.lir/tts")
+            fs.copy(f,"~/.lir/signals")
             
         ini = settings.ini("~/.lir/main.ini")
         ini.create_section("general")

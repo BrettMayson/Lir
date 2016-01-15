@@ -9,7 +9,7 @@ if _version < 3.0:
 
 HOST = ''
 
-import socket
+import socket,pickle
 import fs,os,time
 #TODO replace with threading module
 from _thread import *
@@ -24,6 +24,8 @@ import pair
 #listeners are clients waiting to receive updates from the server
 #{signal id,[clients ...]}
 listeners = {}
+signals = {}
+IGNORED_SIGNALS = ["settings.py","lang.py","fs.py","lir.py"]
 
 def add_listener(sig,conn):
 	if sig in listeners:
@@ -31,13 +33,13 @@ def add_listener(sig,conn):
 	else:
 		listeners[sig] = [conn]
 	
-def execute(command):
+def execute(command,directory = "/.lir/bin"):
 	d = os.getcwd()
-	os.chdir(fs.home()+"/.lir/bin")
+	os.chdir(fs.home()+directory)
 	print("EXECUTING:",command)
 	out = subprocess.getoutput("./"+command)
 	os.chdir(d)
-	return out + "\n"
+	return out
 	
 def action(mode,data,device):
 	command = None
@@ -45,10 +47,10 @@ def action(mode,data,device):
 	if mode == "speech":
 		#TODO dictionaries active when certain programs running
 		#TODO dictionaries active when certain programs focused
-		device.send(execute(subprocess.getoutput(fs.home()+"/.lir/dictionary \""+data+"\" "+fs.home()+"/.lir/actions/default.dic")))
+		device.send(execute(subprocess.getoutput(fs.home()+"/.lir/dictionary \""+data+"\" "+fs.home()+"/.lir/actions/default.dic")) + "\n")
 	#a direct command to be ran
 	elif mode == "direct":
-		device.send(execute(data))
+		device.send(execute(data) + "\n")
 	#a client that wants updates
 	elif mode == "signal":
 		add_listener(data,conn)
@@ -97,8 +99,18 @@ def handle(conn):
 
 def signal_check():
 	while True:
-		#print("Signal Check")
+		for f in os.listdir(fs.home()+'/.lir/signals/'):
+			if f not in IGNORED_SIGNALS:
+				data = execute(f,'/.lir/signals/')
+				with open('/tmp/lir-pickle','rb') as fi:
+					data = pickle.load(fi)
+				if f in signals:
+					if signals[f] != data:
+						print("CHANGED: ",f)
+				signals[f] = data
+		print(signals)	
 		time.sleep(5)
+		
 
 def main():
 

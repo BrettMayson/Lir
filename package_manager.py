@@ -29,7 +29,7 @@ def installCompressed(path):
     print(lang.get("install","start"),info.get("info","name"))
     #move files to "install" plugin
     fs.copy("/tmp/lir/info.ini","~/.lir/plugins/"+info.get("info","name").replace(" ","_").lower()+".ini")
-    for s in ["tts","sst","services","bin"]:
+    for s in ["tts","sst","services","bin","signals"]:
         if info.has_section(s):
             if not fs.copy("/tmp/lir/"+s,"~/.lir/"+s):
                 print(lang.get("error","transfer"),fs.expand_path("/tmp/lir/"+s),fs.expand_path("~/.lir/"+s))
@@ -47,7 +47,7 @@ def installFolder(path):
     print(lang.get("install","start"),info.get("info","name"))
     #move files to "install" plugin
     fs.copy(path+"/info.ini","~/.lir/plugins/"+info.get("info","name").replace(" ","_").lower()+".ini")
-    for s in ["tts","sst","services","bin"]:
+    for s in ["tts","sst","services","bin","signals"]:
         #if info.has_section(s):
         if os.path.exists(path+"/"+s):
             if not fs.copy(path+"/"+s,"~/.lir/"+s):
