@@ -13,7 +13,7 @@ import socket,pickle
 import fs,os,time
 #TODO replace with threading module
 from _thread import *
-import subprocess
+import subprocess,select
 
 import aes
 import db
@@ -36,7 +36,6 @@ def add_listener(sig,conn):
 def execute(command,directory = "/.lir/bin"):
 	d = os.getcwd()
 	os.chdir(fs.home()+directory)
-	print("EXECUTING:",command)
 	out = subprocess.getoutput("./"+command)
 	os.chdir(d)
 	return out
@@ -51,9 +50,6 @@ def action(mode,data,device):
 	#a direct command to be ran
 	elif mode == "direct":
 		device.send(execute(data) + "\n")
-	#a client that wants updates
-	elif mode == "signal":
-		add_listener(data,conn)
 	#the message is encrypted
 	elif mode == "enc":
 		iv = device.readLine()
@@ -95,7 +91,44 @@ def handle(conn):
 	ip = peer[0]
 	port = str(peer[1])
 	resp(conn)
-	print("Disconnected",ip+":"+port)
+	#Because of how listeners work this is inacurate and will be worked in later
+	#print("Disconnected",ip+":"+port)
+
+def handleSig(conn):
+	device = connection.Device(conn)
+	data = device.readLine()
+	if data == "":
+		return
+	#data = str(data)[2:-1]
+	#cleanup telnet or other methods of input
+	if data.endswith("\\r\\n"):
+		data = data[:-4]
+	#android adds newline
+	if data.endswith("\\n"):
+		data = data[:-2]
+	print("RECEIVED:",data)
+	try:
+		mode,data = data.split(":",1)
+	except:
+		mode = "follow"
+		
+	if mode == "enc":
+		iv = device.readLine()
+		did = device.readLine()
+		ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
+		ddata = ddb.getDeviceByID(did)
+		ddb.close()
+		device = connection.Device(device.conn,ddata['key'],True)
+		data = device.decrypt(data,iv)
+		try:
+			mode,data = data.split(":",1)
+		except:
+			mode = "follow"
+		#action(mode,msg,device2)
+		
+	if mode == "follow":
+		print("Listener added to :",data)
+		add_listener(data,device)
 
 def signal_check():
 	while True:
@@ -107,9 +140,14 @@ def signal_check():
 				if f in signals:
 					if signals[f] != data:
 						print("CHANGED: ",f)
+						if f in listeners:
+							for each in listeners[f]:
+								try:
+									each.send(str(data))
+								except:
+									listeners[f].remove(each)
 				signals[f] = data
-		print(signals)	
-		time.sleep(5)
+		time.sleep(0.1)
 		
 
 def main():
@@ -118,11 +156,14 @@ def main():
 	PORT = int(info.get("server","port"))
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	sig = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	print("Created Socket")
+	sig.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	print("Created Sockets")
 	
 	try:
 		s.bind((HOST,PORT))
+		sig.bind((HOST,PORT+1))
 	except socket.error as e:
 		print ("Bind Failed.",e)
 		return False
@@ -132,15 +173,25 @@ def main():
 	print ("Starting Signal Check")
 	
 	s.listen(10)
+	sig.listen(10)
 	print ("Socket Listening on port " + str(PORT))
+	print ("Signal Listening on port " + str(PORT + 1))
 	
 	start_new_thread(signal_check, ())
 	
 	listen = True
+	inputs = [s,sig]
 	while listen:
-		con,addr = s.accept()
-		print('Connected with ' + addr[0] + ':' + str(addr[1]))
-		start_new_thread(handle ,(con,))
+		inready,outread,exceptready = select.select(inputs,[],[])
+		for i in inready:
+			if i == s:
+				con,addr = s.accept()
+				print('Connected with ' + addr[0] + ':' + str(addr[1]))
+				start_new_thread(handle ,(con,))
+			elif i == sig:
+				con,addr = sig.accept()
+				print('SIGNAL Connected with ' + addr[0] + ':' + str(addr[1]))
+				start_new_thread(handleSig ,(con,))
 	
 if __name__ == "__main__":
 	main()
