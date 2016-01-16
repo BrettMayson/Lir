@@ -91,8 +91,7 @@ def handle(conn):
 	ip = peer[0]
 	port = str(peer[1])
 	resp(conn)
-	#Because of how listeners work this is inacurate and will be worked in later
-	#print("Disconnected",ip+":"+port)
+	print("Disconnected",ip+":"+port)
 
 def handleSig(conn):
 	device = connection.Device(conn)
