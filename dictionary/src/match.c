@@ -81,7 +81,7 @@ int op_match(char **buffer,char **speech,struct config *cfg) {
   *buf = '\0';
 
 
-  if(strcmp(startVarName,"WORD") == 0) {
+  if(strcasecmp(startVarName,"WORD") == 0) {
     *buf = saveChar;
     if(*buf == '<') {
       lt_match(&buf,&tmpSpeech,cfg);
@@ -91,7 +91,7 @@ int op_match(char **buffer,char **speech,struct config *cfg) {
 	       ++tmpSpeech;
       }
     }
-  } else if(strcmp(startVarName,"LINE") == 0) {
+  } else if(strcasecmp(startVarName,"LINE") == 0) {
     // solution, make Line in this format
     // (Line varname Match Until this)
     // With Match Until this being everything until the
@@ -301,7 +301,7 @@ int any_match(char **buffer,char **speech,char start,char end,struct config *cfg
       ++buf;
     }
 
-    if(*buf == *tmpSpeech) {
+    if(toupper(*buf) == toupper(*tmpSpeech)) {
       ++buf;
       ++tmpSpeech;
     } else {
@@ -634,7 +634,7 @@ int check_equality(char *speech,char *buffer,struct config *cfg) {
         return 0;
       }
     else {
-      if(*speech != *buffer) {
+      if(toupper(*speech) != toupper(*buffer)) {
       	//printf("%c != %c\n",*speech,*buffer); // DEBUG
       	return 0;
       }
