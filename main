@@ -20,9 +20,9 @@ def attemptStart(cmd,pid,python = True):
         with open(pid) as f:
             p = f.read().replace("\n","")
         if python:
-            rpid = getPid(PYTHON,cmd)[0]
+            rpid = getPid(PYTHON,cmd)
             if rpid != None:
-                if rpid == p:
+                if rpid[0] == p:
                     #already running
                     return 1
                 else:
@@ -34,7 +34,7 @@ def attemptStart(cmd,pid,python = True):
                     npid = getPid(PYTHON,cmd)
                     with open(pid,'w') as f:
                         f.write(npid[0])
-                    return True
+                    return 0
         else:
             #TODO implement later, not yet needed
             pass
@@ -44,7 +44,7 @@ def attemptStart(cmd,pid,python = True):
             npid = getPid(PYTHON,cmd)
             with open(pid,'w') as f:
                 f.write(npid[0])
-            return True
+            return 0
 
 def getPid(cmd,options):
     out = sp.getoutput("ps -Ao pid,cmd | grep "+options)
@@ -64,12 +64,12 @@ def main():
             #TODO start notification service
             #start server
             server = attemptStart(SERVER,LIR_FOLDER+"/.server.pid")
-            if server == 1:
-                print("Server already running! PID:",getPid(PYTHON,SERVER)[0])
+            if server == 0:
+                print("Server started! PID:",getPid(PYTHON,SERVER)[0])
             elif server == 2:
                 print("Server appears to be running! PID:",getPid(PYTHON,SERVER)[0])
-            elif server == True:
-                print("Server started! PID:",getPid(PYTHON,SERVER)[0])
+            elif server == 1:
+                print("Server already running! PID:",getPid(PYTHON,SERVER)[0])
         else:
             #start wizard
             wizard = attemptStart(WIZARD,LIR_FOLDER+"/.wizard.pid")

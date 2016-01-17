@@ -17,6 +17,13 @@ def main():
         interface.Previous()
     elif action == "play":
         interface.PlayPause()
-    
+    elif action == "seek":
+        percent = sys.argv[3]
+        properties_manager = dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
+        length = properties_manager.Get('org.mpris.MediaPlayer2.Player', 'Metadata')['mpris:length']
+        time = (int(percent) * int(length)) / 10000
+        print(time)
+        interface.SetPosition(properties_manager.Get('org.mpris.MediaPlayer2.Player', 'Metadata')['mpris:trackid'],time)
+        
 if __name__ == "__main__":
     main()

@@ -27,12 +27,12 @@ def main():
                         data[str(m)] = str(metadata[m][0])
                     else:
                         data[str(m)] = str(metadata[m])
-            if state == "Playing":
-                players.append(data)
-            else:
-                other.append(data)
-    for s in other:
-        players.append(s)
+            #if state == "Playing":
+            players.append(data)
+            #else:
+            #    other.append(data)
+    #for s in other:
+    #    players.append(s)
         
     with open('/tmp/lir-pickle','wb') as f:
         pickle.dump(players,f)

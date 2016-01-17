@@ -70,10 +70,10 @@ def main():
     global key
     key = aes.generateRandom(16)
     #key = "aaaaaaaaaaaaaaaa"
-    os.system("mkdir /tmp/lispeak")
-    os.system("qrencode -s 15 -o /tmp/lispeak/pair.png \""+key+"\"")
+    os.system("mkdir /tmp/lir")
+    os.system("qrencode -s 15 -o /tmp/lir/pair.png \""+key+"\"")
     time.sleep(0.1)
-    os.system("xdg-open /tmp/lispeak/pair.png")
+    os.system("xdg-open /tmp/lir/pair.png")
     print ("Key: ",key)
     
     con,addr = s.accept()
