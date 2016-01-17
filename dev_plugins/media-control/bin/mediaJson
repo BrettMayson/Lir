@@ -13,6 +13,8 @@ def main():
             properties_manager = dbus.Interface(proxy, 'org.freedesktop.DBus.Properties')
             metadata = properties_manager.Get('org.mpris.MediaPlayer2.Player', 'Metadata')
             state = properties_manager.Get('org.mpris.MediaPlayer2.Player', 'PlaybackStatus')
+            time = properties_manager.Get('org.mpris.MediaPlayer2.Player','Position')
+            metadata['time'] = time
             metadata['state'] = state
             metadata['player'] = s.split('.')[-1]
             metadata['interface'] = s
