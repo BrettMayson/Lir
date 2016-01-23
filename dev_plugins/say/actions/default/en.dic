@@ -1,2 +1,2 @@
 <say,speak> (LINE words)
-  say "$words$"
+  say/say "$words$"

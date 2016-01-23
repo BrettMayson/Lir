@@ -1,20 +1,20 @@
 [can you ,please ,why don't you ]play (LINE song)
-  mediaControl "$song$"
+  media/control "$song$"
 [can you ,please ,why don't you ]play[ the][ <media,song,video,audio>]
-  mediaControl play
+  media/control play
 [can you ,please ,why don't you ]pause[ the][ <media,song,video,audio>]
-  mediaControl pause
+  media/control pause
 stop[ the][ <media,song,video,audio>]
-  mediaControl stop
+  media/control stop
 next[ <song,file,media,video,track>]
-  mediaControl next
+  media/control next
 <previous,last>[ <song,file,media,video,track>]
-  mediaControl prev
+  media/control prev
 [can you ,please ,why don't you ][volume ]mute[ volume]
-  mediaControl volume_mute
+  media/control volume_mute
 [can you ,please ,why don't you ]<<increase,raise,more,higher,turn> volume,volume <up,increase,higher,raise>>
-  mediaControl volume_up
+  media/control volume_up
 [can you ,please ,why don't you ]<<decrease,lower,less,down,turn> volume,volume <decrease,lower,less,down>>
-  mediaControl volume_down
+  media/control volume_down
 [what[ is][ <the,this>] ]<current[ly],playing,song>[ playing][ song][ is <playing,on,this>][ right][ now]
-  mediaInfo
+  media/info

@@ -11,12 +11,8 @@ import os
 import json
 import threading
 import platform
-
-import db
-import settings
-import aes
-import fs
-import connection
+ 
+import lir
     
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -113,11 +109,11 @@ class WindowHandler():
             sel = self.tree.get_selection()
             (model, treeiter) = sel.get_selected()
             
-            ini = settings.ini("~/.lir/main.ini")
+            ini = lir.Settings.ini("~/.lir/main.ini")
             
             ip = model[treeiter][0]
             port = int(ini.get("server","port"))
-            key = aes.generateRandom(16)
+            key = lir.Communication.AES.generateRandom(16)
             
             data = json.dumps({"ip" : ip, "port" : str(port), "key" : key})
             
@@ -196,17 +192,17 @@ class PairProcess(threading.Thread):
         self.done()
         Gdk.threads_leave()
         
-        ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
+        ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
         #Receive pairing process version number
-        version = int(connection._readPlain(conn,1))
+        version = int(lir.Communication._readPlain(conn,1))
         print("Version:",version)
         if version == 1:
             #Will pair will be encrypted
             #1 - yes
             #0 - no
-            enc = connection._readPlain(conn,1)
+            enc = lir.Communication._readPlain(conn,1)
             print("Encrypted:",enc == "1")
-            device = connection.Device(conn,self.key,enc == "1")
+            device = lir.Communication.Device(conn,self.key,enc == "1")
             #send hostname
             device.send(socket.gethostname())
             #send os

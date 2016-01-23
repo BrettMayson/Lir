@@ -10,15 +10,12 @@ if _version < 3.0:
 HOST = ''
 
 import socket,pickle
-import fs,os,time
+import os,time
 #TODO replace with threading module
 from _thread import *
 import subprocess,select
 
-import aes
-import db
-import settings
-import connection
+import lir
 
 #listeners are clients waiting to receive updates from the server
 listeners = []
@@ -28,18 +25,19 @@ IGNORED_SIGNALS = ["settings.py","lang.py","fs.py","lir.py"]
     
 def execute(command,directory = "~/.lir/bin"):
     d = os.getcwd()
-    os.chdir(fs.expand_path(directory))
+    os.chdir(lir.FileSystem.expand_path(directory))
     out = subprocess.getoutput("./"+command)
     os.chdir(d)
     return out
     
 def action(mode,data,device):
+    print("Acting on:",mode,data)
     command = None
     #human speech for parsing with the dictionaries
     if mode == "speech":
         #TODO dictionaries active when certain programs running
         #TODO dictionaries active when certain programs focused
-        device.send(execute(subprocess.getoutput(fs.home()+"/.lir/dictionary \""+data+"\" "+fs.home()+"/.lir/actions/default.dic")) + "\n")
+        device.send(execute(subprocess.getoutput(lir.FileSystem.home()+"/.lir/dictionary \""+data+"\" "+lir.FileSystem.home()+"/.lir/actions/default.dic")) + "\n")
     #a direct command to be ran
     elif mode == "direct":
         device.send(execute(data) + "\n")
@@ -52,10 +50,10 @@ def action(mode,data,device):
     elif mode == "enc":
         iv = device.readLine()
         did = device.readLine()
-        ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
+        ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
         ddata = ddb.getDeviceByID(did)
         ddb.close()
-        device2 = connection.Device(device.conn,ddata['key'],True)
+        device2 = lir.Communication.Device(device.conn,ddata['key'],True)
         msg = device2.decrypt(data,iv)
         try:
             mode,msg = msg.split(":",1)
@@ -64,7 +62,7 @@ def action(mode,data,device):
         action(mode,msg,device2)
     
 def resp(conn):
-    device = connection.Device(conn)
+    device = lir.Communication.Device(conn)
     #Receiving from client
     data = device.readLine()
     if data == "":
@@ -76,7 +74,6 @@ def resp(conn):
     #android adds newline
     if data.endswith("\\n"):
         data = data[:-2]
-    print("RECEIVED:",data)
     try:
         mode,data = data.split(":",1)
     except:
@@ -92,7 +89,7 @@ def handle(conn):
     print("Disconnected",ip+":"+port)
 
 def handleSig(conn):
-    device = connection.Device(conn)
+    device = lir.Communication.Device(conn)
     data = device.readLine()
     if data == "":
         return
@@ -112,10 +109,10 @@ def handleSig(conn):
     if mode == "enc":
         iv = device.readLine()
         did = device.readLine()
-        ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
+        ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
         ddata = ddb.getDeviceByID(did)
         ddb.close()
-        device = connection.Device(device.conn,ddata['key'],True)
+        device = lir.Communication.Device(device.conn,ddata['key'],True)
         data = device.decrypt(data,iv)
         try:
             mode,data = data.split(":",1)
@@ -128,29 +125,30 @@ def handleSig(conn):
 
 def signal_check():
     while True:
-        for p in os.listdir(fs.home()+'/.lir/signals/'):
-            if os.path.isdir(fs.home()+'/.lir/signals/'+p):
-                for f in os.listdir(fs.home()+'/.lir/signals/'+p):
+        for p in os.listdir(lir.FileSystem.home()+'/.lir/signals/'):
+            if os.path.isdir(lir.FileSystem.home()+'/.lir/signals/'+p):
+                for f in os.listdir(lir.FileSystem.home()+'/.lir/signals/'+p):
                     data = execute(f,'~/.lir/signals/'+p)
                     with open('/tmp/lir-pickle','rb') as fi:
                         data = pickle.load(fi)
                     if p+'/'+f in signals:
                         if signals[p+'/'+f] != data:
-                            print(p+"/"+f+":::"+str(data))
-                            if f in triggers:
+                            if p+'/'+f in triggers:
                                 for each in listeners:
                                     try:
                                         if each.conn.getpeername()[0] in triggers[p+'/'+f]:
                                             each.send(p+"/"+f+":::"+str(data))
                                     except:
                                         listeners.remove(each)
+                                        #TODO store and print ip and port
+                                        print("Lost Follower")
                     signals[p+'/'+f] = data
         time.sleep(0.3)
         
 
 def main():
 
-    info = settings.ini(fs.home()+"/.lir/main.ini")
+    info = lir.Settings.ini(lir.FileSystem.home()+"/.lir/main.ini")
     PORT = int(info.get("server","port"))
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

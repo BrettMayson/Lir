@@ -11,9 +11,11 @@ import os,configparser,pwd
 
 import threading
 
-import package_manager as pm
-import settings
-import fs
+#import package_manager as pm
+#import settings
+#import fs
+
+import lir
     
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -56,7 +58,7 @@ class WindowHandler():
         for plugin in dev_plugins:
             if os.path.isdir("dev_plugins/"+plugin):
                 print(plugin)
-                info = settings.ini("dev_plugins/"+plugin+"/info.ini")
+                info = lir.Settings.ini("dev_plugins/"+plugin+"/info.ini")
                 self.packages_list.append((True,info.get("info","name"),info.get("info","version"),info.get("info","author")))
         self.tree = Gtk.TreeView.new_with_model(self.packages_list)
         renderer = Gtk.CellRendererToggle()
@@ -109,6 +111,10 @@ class WindowHandler():
             self.builder.get_object("lblTitle").set_text("Select Language")
             self.builder.get_object("lblLanguageMessage").set_text("Choose the language Lir will use.")
         elif page == 2:
+            ini = lir.Settings.ini("~/.lir/main.ini")
+            ini.create_section("general")
+            ini.set("general","language",self.lang_store[self.builder.get_object("cmbLanguage").get_active()][0])
+            ini.save()
             self.builder.get_object("btnNavLeft").show()
             self.builder.get_object("btnNavRight").set_label("Install")
             self.builder.get_object("lblTitle").set_text("Select Packages")
@@ -160,20 +166,20 @@ class Installer(threading.Thread):
         self.progressbar.set_fraction(0.0)
         Gdk.threads_leave()
         #Create directories
-        fs.delete("~/.lir")
-        fs.create_directory("~/.lir")
+        lir.FileSystem.delete("~/.lir")
+        lir.FileSystem.create_directory("~/.lir")
         for d in ["plugins","tts","stt","actions","services","bin","langs","signals"]:
-            fs.create_directory("~/.lir/"+d)
-        fs.create("~/.lir/actions/default.dic")
-        fs.copy("langs","~/.lir/langs")
+            lir.FileSystem.create_directory("~/.lir/"+d)
+        lir.FileSystem.create("~/.lir/actions/default.dic")
+        lir.FileSystem.copy("langs","~/.lir/langs")
         #copy needed python scripts
-        for f in ["settings.py","lang.py","fs.py","lir.py"]:
-            fs.copy(f,"~/.lir/bin")
-            fs.copy(f,"~/.lir/services")
-            fs.copy(f,"~/.lir/tts")
-            fs.copy(f,"~/.lir/signals")
+        for f in ["settings.py","lang.py","lir.FileSystempy","lir.py"]:
+            lir.FileSystem.copy(f,"~/.lir/bin")
+            lir.FileSystem.copy(f,"~/.lir/services")
+            lir.FileSystem.copy(f,"~/.lir/tts")
+            lir.FileSystem.copy(f,"~/.lir/signals")
             
-        ini = settings.ini("~/.lir/main.ini")
+        ini = lir.Settings.ini("~/.lir/main.ini")
         ini.create_section("general")
         name = pwd.getpwuid(os.getuid())[4].replace(",","")
         ini.set("general","name",name)
@@ -190,10 +196,10 @@ class Installer(threading.Thread):
         Gdk.threads_leave()
         #make dictionary program
         os.chdir("dictionary")
-        fs.delete("dictionary")
-        fs.system("make")
+        lir.FileSystem.delete("dictionary")
+        lir.FileSystem.system("make")
         os.chdir("../")
-        fs.copy("dictionary/dictionary","~/.lir/dictionary")
+        lir.FileSystem.copy("dictionary/dictionary","~/.lir/dictionary")
         
         Gdk.threads_enter()
         self.status.set_text("Gathering Dependency Information")
@@ -209,7 +215,7 @@ class Installer(threading.Thread):
             Gdk.threads_leave()
             if os.path.isdir("dev_plugins/"+plugin):
                 print(plugin)
-                info = settings.ini("dev_plugins/"+plugin+"/info.ini")
+                info = lir.Settings.ini("dev_plugins/"+plugin+"/info.ini")
                 if info.get("info","name") in self.packages:
                     for sec in ['info','tts']:
                         if info.has_section(sec):
@@ -248,7 +254,7 @@ class Installer(threading.Thread):
             self.progressbar.set_fraction(x / mx)
             Gdk.threads_leave()
             if os.path.isdir("dev_plugins/"+plugin):
-                pm.installFolder("dev_plugins/" + plugin)
+                lir.PluginManager.installFolder("dev_plugins/" + plugin)
                 
         Gdk.threads_enter()
         self.status.set_text("Creating Settings File")

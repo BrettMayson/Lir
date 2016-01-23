@@ -1,25 +1,25 @@
 <open,show> [my ]<documents,files>[ folder]
-  open "xdg-open `xdg-user-dir DOCUMENTS`"
+  browse/open "xdg-open `xdg-user-dir DOCUMENTS`"
 <open,show> [my ]music[ folder]
-  open "xdg-open `xdg-user-dir MUSIC`"
+  browse/open "xdg-open `xdg-user-dir MUSIC`"
 <open,show> [my ]home[ folder]
-  open "xdg-open `xdg-user-dir`"
+  browse/open "xdg-open `xdg-user-dir`"
 <open,show> [my ]videos[ folder]
-  open "xdg-open `xdg-user-dir VIDEOS`"
+  browse/open "xdg-open `xdg-user-dir VIDEOS`"
 <open,show> [my ]pictures[ folder]
-  open "xdg-open `xdg-user-dir PICTURES`"
+  browse/open "xdg-open `xdg-user-dir PICTURES`"
 <open,show> [my ]downloads[ folder]
-  open "xdg-open `xdg-user-dir DOWNLOAD`"
+  browse/open "xdg-open `xdg-user-dir DOWNLOAD`"
 
 <search,google> (LINE question)
-  goto "http://www.google.com/search?q=$question$"
+  browse/goto "http://www.google.com/search?q=$question$"
 <wolfram,wolf RAM>[ alpha] (LINE question)
-  goto "www.wolframalpha.com/input/?i=$question$"
+  browse/goto "www.wolframalpha.com/input/?i=$question$"
 youtube (LINE video)
-  goto "https://www.youtube.com/results?search_query=$video$"
+  browse/goto "https://www.youtube.com/results?search_query=$video$"
 
 where is (LINE place)
-  goto "https://maps.google.com/maps?q=$place$&hl=\$LANG"
+  browse/goto "https://maps.google.com/maps?q=$place$&hl=\$LANG"
 
 <open,launch>[ application] (LINE app)
-  program "$app$"
+  browse/program "$app$"
