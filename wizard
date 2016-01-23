@@ -272,6 +272,9 @@ class Installer(threading.Thread):
         self.done()
         Gdk.threads_leave()
         
+        with(lir.FileSystem.expand_path("~/.lir/.firstrun")) as f:
+            f.write(":)")
+        
 def main():
     wizard = SetupWizard()
     Gdk.threads_init()

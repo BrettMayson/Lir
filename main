@@ -3,7 +3,7 @@
 import os
 import subprocess as sp
 
-import fs
+import lir
 
 PYTHON = "python3.4"
 
@@ -12,7 +12,7 @@ PAIR        = os.getcwd()+"/"+"pair"
 WIZARD      = os.getcwd()+"/"+"wizard"
 SETTINGS    = None
 
-LIR_FOLDER  = fs.home() + "/.lir/"
+LIR_FOLDER  = lir.FileSystem.home() + "/.lir/"
 FIRST_RUN = LIR_FOLDER + ".firstrun"
 
 def attemptStart(cmd,pid = None,python = True):
@@ -75,8 +75,6 @@ def main():
     else:
         #start wizard
         wizard = attemptStart(WIZARD)
-        with open(FIRST_RUN,'w') as f:
-            f.write(":)")
         print("Wizard:",wizard)
     return 0
 
