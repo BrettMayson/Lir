@@ -54,9 +54,16 @@ class Communication():
                 self.read = self.readPlain
             
         def sendEnc(self,text):
+            #print("LEN",len(text))
+            #if len(text) < 1024 * 4:
             enc,iv = self.factory.encrypt(text)
             self.conn.sendall(iv + b'\n')
             self.conn.sendall(enc + b'\n')
+            #else:
+            #    enc,iv = self.factory.encrypt(text)
+            #    enc2,iv2 = self.factory.encrypt("|long|"+str(len(enc))+"|/long|")
+            #    self.conn.sendall(iv2 + b'\n')
+            #    self.conn.sendall(enc2 + b'\n')
             
         def sendPlain(self,text):
             Communication._sendPlain(self.conn,text)

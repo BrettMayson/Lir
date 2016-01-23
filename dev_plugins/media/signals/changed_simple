@@ -36,6 +36,7 @@ def main():
         
     with open('/tmp/lir-pickle','wb') as f:
         pickle.dump(players,f)
+    print("||pickle||")
     
 if __name__ == "__main__":
     main()

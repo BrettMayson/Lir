@@ -7,6 +7,11 @@ if _version < 3.0:
 	exec("print \"Python 3.0 or higher is required\"")
 	sys.exit(1)
 
+import base64
+
+def pad(self,s):
+    return s + (self.BS - len(s) % self.BS) * chr(self.BS - len(s) % self.BS) 
+
 f = sys.argv[1]
 if f.startswith("file://"):
     f = f[7:]
@@ -14,4 +19,5 @@ if f.startswith("file://"):
 with open(f,'rb') as obj:
     data = obj.read()
     
-return data
+#Encode the binary data in base 64 and the as a string in UTF-8
+print(base64.b64encode(data).decode("UTF-8").replace("\\n",""))
