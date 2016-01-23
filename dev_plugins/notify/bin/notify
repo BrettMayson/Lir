@@ -13,7 +13,10 @@ parser.add_argument('-i', dest="icon", type=str, help='Path to icon for noticiat
 args = parser.parse_args()
 
 Notify.init("Lir")
-if args.icon.startswith("http"):
-    args.icon,headers = urllib.request.urlretrieve(args.icon)
+try:
+    if args.icon.startswith("http"):
+        args.icon,headers = urllib.request.urlretrieve(args.icon)
+except:
+    pass
 n = Notify.Notification.new(args.title, args.body, args.icon)
 n.show()

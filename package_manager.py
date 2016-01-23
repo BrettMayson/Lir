@@ -19,6 +19,7 @@ def add_dictionary(path,name):
 def installCompressed(path):
     #resolve path and open tar
     path = fs.expand_path(path)
+    name = path.split("/")[-1]
     tar = tarfile.open(path,'r:gz')
     fs.create_directory("/tmp/lir")
     #extract into /tmp
@@ -31,7 +32,7 @@ def installCompressed(path):
     fs.copy("/tmp/lir/info.ini","~/.lir/plugins/"+info.get("info","name").replace(" ","_").lower()+".ini")
     for s in ["tts","sst","services","bin","signals"]:
         if info.has_section(s):
-            if not fs.copy("/tmp/lir/"+s,"~/.lir/"+s):
+            if not fs.copy("/tmp/lir/"+s,"~/.lir/"+s+"/"+name):
                 print(lang.get("error","transfer"),fs.expand_path("/tmp/lir/"+s),fs.expand_path("~/.lir/"+s))
                 return False
     for dic in os.listdir("/tmp/lir/actions"):
@@ -43,6 +44,7 @@ def installCompressed(path):
     
 def installFolder(path):
     path = fs.expand_path(path)
+    name = path.split("/")[-1]
     info = settings.ini(path+"/info.ini")
     print(lang.get("install","start"),info.get("info","name"))
     #move files to "install" plugin
@@ -50,7 +52,7 @@ def installFolder(path):
     for s in ["tts","sst","services","bin","signals"]:
         #if info.has_section(s):
         if os.path.exists(path+"/"+s):
-            if not fs.copy(path+"/"+s,"~/.lir/"+s):
+            if not fs.copy(path+"/"+s,"~/.lir/"+s+"/"+name):
                 print(lang.get("error","transfer"),fs.expand_path(path+"/"+s),fs.expand_path("~/.lir/"+s))
                 return False
     if os.path.isdir(path+"/actions"):

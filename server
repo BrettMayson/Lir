@@ -21,22 +21,15 @@ import settings
 import connection
 
 #listeners are clients waiting to receive updates from the server
-#{signal id,[clients ...]}
-listeners = {}
+listeners = []
+triggers = {}
 signals = {}
 IGNORED_SIGNALS = ["settings.py","lang.py","fs.py","lir.py"]
-
-def add_listener(sig,conn):
-    if sig in listeners:
-        listeners[sig].append(conn)
-    else:
-        listeners[sig] = [conn]
     
-def execute(command,directory = "/.lir/bin"):
+def execute(command,directory = "~/.lir/bin"):
     d = os.getcwd()
-    os.chdir(fs.home()+directory)
+    os.chdir(fs.expand_path(directory))
     out = subprocess.getoutput("./"+command)
-    print(out)
     os.chdir(d)
     return out
     
@@ -50,6 +43,11 @@ def action(mode,data,device):
     #a direct command to be ran
     elif mode == "direct":
         device.send(execute(data) + "\n")
+    elif mode == "follow":
+        if data in triggers:
+            triggers[data].append(device.conn.getpeername()[0])
+        else:
+            triggers[data] = [device.conn.getpeername()[0]]
     #the message is encrypted
     elif mode == "enc":
         iv = device.readLine()
@@ -109,7 +107,7 @@ def handleSig(conn):
     try:
         mode,data = data.split(":",1)
     except:
-        mode = "follow"
+        mode = "listen"
         
     if mode == "enc":
         iv = device.readLine()
@@ -122,30 +120,31 @@ def handleSig(conn):
         try:
             mode,data = data.split(":",1)
         except:
-            mode = "follow"
-        #action(mode,msg,device2)
+            mode = "listen"
         
-    if mode == "follow":
+    if mode == "listen":
         print("Listener added to :",data)
-        add_listener(data,device)
+        listeners.append(device)
 
 def signal_check():
     while True:
-        for f in os.listdir(fs.home()+'/.lir/signals/'):
-            if f not in IGNORED_SIGNALS:
-                data = execute(f,'/.lir/signals/')
-                with open('/tmp/lir-pickle','rb') as fi:
-                    data = pickle.load(fi)
-                if f in signals:
-                    if signals[f] != data:
-                        print("CHANGED: ",f)
-                        if f in listeners:
-                            for each in listeners[f]:
-                                try:
-                                    each.send(str(data))
-                                except:
-                                    listeners[f].remove(each)
-                signals[f] = data
+        for p in os.listdir(fs.home()+'/.lir/signals/'):
+            if os.path.isdir(fs.home()+'/.lir/signals/'+p):
+                for f in os.listdir(fs.home()+'/.lir/signals/'+p):
+                    data = execute(f,'~/.lir/signals/'+p)
+                    with open('/tmp/lir-pickle','rb') as fi:
+                        data = pickle.load(fi)
+                    if p+'/'+f in signals:
+                        if signals[p+'/'+f] != data:
+                            print(p+"/"+f+":::"+str(data))
+                            if f in triggers:
+                                for each in listeners:
+                                    try:
+                                        if each.conn.getpeername()[0] in triggers[p+'/'+f]:
+                                            each.send(p+"/"+f+":::"+str(data))
+                                    except:
+                                        listeners.remove(each)
+                    signals[p+'/'+f] = data
         time.sleep(0.3)
         
 

@@ -35,6 +35,10 @@ def copy(src,dst):
     import lang
     src = expand_path(src)
     dst = expand_path(dst)
+    try:
+        os.makedirs(dst)
+    except:
+        pass
     if os.path.isdir(src):
         files = [f for f in os.listdir(src) if os.path.isfile(os.path.join(src, f))]
         dirs =  [f for f in os.listdir(src) if os.path.isdir(os.path.join(src, f))]
