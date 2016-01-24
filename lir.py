@@ -7,6 +7,31 @@ class Language():
     def get(section,key):
         return self.data.get(secion,key)
 
+class OutputWriter:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    
+    def __init__(self,name):
+        self.name = name
+        
+    def info(self,*text):
+        print("["+self.name+"] "+OutputWriter.OKBLUE + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        
+    def warning(self, *text):
+        print("["+self.name+"] "+OutputWriter.WARNING + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        
+    def fail(self, *text):
+        print("["+self.name+"] "+OutputWriter.FAIL + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        
+    def success(self, *text):
+        print("["+self.name+"] "+OutputWriter.OKGREEN + ' '.join(map(str,text)) + OutputWriter.ENDC)
+
 class DataStorage():
     class Devices():
         def __init__(self,path):

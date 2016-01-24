@@ -31,8 +31,7 @@ def execute(command,directory = "~/.lir/bin"):
     os.chdir(d)
     return out
     
-def action(mode,data,device):
-    print("Acting on:",mode,data)
+def action(mode,data,device,out):
     command = None
     #human speech for parsing with the dictionaries
     if mode == "speech":
@@ -41,14 +40,22 @@ def action(mode,data,device):
         device.send(execute(subprocess.getoutput(lir.FileSystem.home()+"/.lir/dictionary \""+data+"\" "+lir.FileSystem.home()+"/.lir/actions/default.dic")) + "\n")
     #a direct command to be ran
     elif mode == "direct":
+        out.info("Executing",data)
         sendData = execute(data)
-        print(sendData)
+        if len(sendData) < 1024:
+            if sendData.startswith("Traceback"):
+                out.fail(sendData)
+            else:
+                out.info(sendData)
+        else:
+            out.info("Sending",len(sendData),"bytes")
         device.send(sendData + "\n")
     elif mode == "follow":
         if data in triggers:
             triggers[data].append(device.conn.getpeername()[0])
         else:
             triggers[data] = [device.conn.getpeername()[0]]
+        out.info("Following",data)
     #the message is encrypted
     elif mode == "enc":
         iv = device.readLine()
@@ -62,9 +69,9 @@ def action(mode,data,device):
             mode,msg = msg.split(":",1)
         except:
             mode = "speech"
-        action(mode,msg,device2)
+        action(mode,msg,device2,out)
     
-def resp(conn):
+def resp(conn,out):
     device = lir.Communication.Device(conn)
     #Receiving from client
     data = device.readLine()
@@ -82,16 +89,24 @@ def resp(conn):
     except:
         mode = "speech"
         
-    action(mode,data,device)
+    action(mode,data,device,out)
 
 def handle(conn):
     peer = conn.getpeername()
     ip = peer[0]
     port = str(peer[1])
-    resp(conn)
-    print("Disconnected",ip+":"+port)
+    out = lir.OutputWriter(ip+":"+port)
+    out.success("Connected")
+    resp(conn,out)
+    out.warning("Disconnected")
 
 def handleSig(conn):
+    peer = conn.getpeername()
+    ip = peer[0]
+    port = str(peer[1])
+    out = lir.OutputWriter("SIG "+ip+":"+port)
+    out.success("Connected")
+    
     device = lir.Communication.Device(conn)
     data = device.readLine()
     if data == "":
@@ -103,7 +118,6 @@ def handleSig(conn):
     #android adds newline
     if data.endswith("\\n"):
         data = data[:-2]
-    print("RECEIVED:",data)
     try:
         mode,data = data.split(":",1)
     except:
@@ -123,7 +137,7 @@ def handleSig(conn):
             mode = "listen"
         
     if mode == "listen":
-        print("Listener added to :",data)
+        out.info("Listener added to :",data)
         listeners.append(device)
 
 def signal_check():
@@ -152,6 +166,8 @@ def signal_check():
 
 def main():
 
+    masterout = lir.OutputWriter("SERVER")
+
     info = lir.Settings.ini(lir.FileSystem.home()+"/.lir/main.ini")
     PORT = int(info.get("server","port"))
 
@@ -159,39 +175,40 @@ def main():
     sig = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sig.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print("Created Sockets")
+    masterout.info("Created Sockets")
     
     try:
         s.bind((HOST,PORT))
         sig.bind((HOST,PORT+1))
     except socket.error as e:
-        print ("Bind Failed.",e)
+        masterout.fail("Bind Failed.",e)
         return False
         
-    print ("Bind Complete.")
+    masterout.info("Bind Complete.")
     
-    print ("Starting Signal Check")
+    masterout.info("Starting Signal Check")
     
     s.listen(10)
     sig.listen(10)
-    print ("Socket Listening on port " + str(PORT))
-    print ("Signal Listening on port " + str(PORT + 1))
+    masterout.success("Socket Listening on port " + str(PORT))
+    masterout.success("Signal Listening on port " + str(PORT + 1))
     
     start_new_thread(signal_check, ())
     
     listen = True
     inputs = [s,sig]
-    while listen:
-        inready,outread,exceptready = select.select(inputs,[],[])
-        for i in inready:
-            if i == s:
-                con,addr = s.accept()
-                print('Connected with ' + addr[0] + ':' + str(addr[1]))
-                start_new_thread(handle ,(con,))
-            elif i == sig:
-                con,addr = sig.accept()
-                print('SIGNAL Connected with ' + addr[0] + ':' + str(addr[1]))
-                start_new_thread(handleSig ,(con,))
+    try:
+        while listen:
+            inready,outread,exceptready = select.select(inputs,[],[])
+            for i in inready:
+                if i == s:
+                    con,addr = s.accept()
+                    start_new_thread(handle ,(con,))
+                elif i == sig:
+                    con,addr = sig.accept()
+                    start_new_thread(handleSig ,(con,))
+    except KeyboardInterrupt as e:
+        masterout.warning("Killed by user")
     
 if __name__ == "__main__":
     main()
