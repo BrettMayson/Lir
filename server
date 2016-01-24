@@ -31,7 +31,7 @@ def execute(command,directory = "~/.lir/bin"):
     os.chdir(d)
     return out
     
-def action(mode,data,device,out):
+def action(mode,data,device):
     command = None
     #human speech for parsing with the dictionaries
     if mode == "speech":
@@ -40,22 +40,22 @@ def action(mode,data,device,out):
         device.send(execute(subprocess.getoutput(lir.FileSystem.home()+"/.lir/dictionary \""+data+"\" "+lir.FileSystem.home()+"/.lir/actions/default.dic")) + "\n")
     #a direct command to be ran
     elif mode == "direct":
-        out.info("Executing",data)
+        device.out.info("Executing",data)
         sendData = execute(data)
         if len(sendData) < 1024:
             if sendData.startswith("Traceback"):
-                out.fail(sendData)
+                device.out.fail(sendData)
             else:
-                out.info(sendData)
+                device.out.info(sendData)
         else:
-            out.info("Sending",len(sendData),"bytes")
+            device.out.info("Sending",len(sendData),"bytes")
         device.send(sendData + "\n")
     elif mode == "follow":
         if data in triggers:
             triggers[data].append(device.conn.getpeername()[0])
         else:
             triggers[data] = [device.conn.getpeername()[0]]
-        out.info("Following",data)
+        device.out.info("Following",data)
     #the message is encrypted
     elif mode == "enc":
         iv = device.readLine()
@@ -63,16 +63,18 @@ def action(mode,data,device,out):
         ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
         ddata = ddb.getDeviceByID(did)
         ddb.close()
-        device2 = lir.Communication.Device(device.conn,ddata['key'],True)
+        out2 = lir.OutputWriter(device.out.name,True)
+        out2.info("Encrypted Connection")
+        device2 = lir.Communication.Device(out2,device.conn,ddata['key'],True)
         msg = device2.decrypt(data,iv)
         try:
             mode,msg = msg.split(":",1)
         except:
             mode = "speech"
-        action(mode,msg,device2,out)
+        action(mode,msg,device2)
     
 def resp(conn,out):
-    device = lir.Communication.Device(conn)
+    device = lir.Communication.Device(out,conn)
     #Receiving from client
     data = device.readLine()
     if data == "":
@@ -89,7 +91,7 @@ def resp(conn,out):
     except:
         mode = "speech"
         
-    action(mode,data,device,out)
+    action(mode,data,device)
 
 def handle(conn):
     peer = conn.getpeername()
@@ -107,7 +109,7 @@ def handleSig(conn):
     out = lir.OutputWriter("SIG "+ip+":"+port)
     out.success("Connected")
     
-    device = lir.Communication.Device(conn)
+    device = lir.Communication.Device(out,conn)
     data = device.readLine()
     if data == "":
         return
@@ -129,7 +131,9 @@ def handleSig(conn):
         ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
         ddata = ddb.getDeviceByID(did)
         ddb.close()
-        device = lir.Communication.Device(device.conn,ddata['key'],True)
+        out = lir.OutputWriter(device.out.name,True)
+        out.info("Encrypted Connection")
+        device = lir.Communication.Device(out,device.conn,ddata['key'],True)
         data = device.decrypt(data,iv)
         try:
             mode,data = data.split(":",1)
@@ -137,7 +141,7 @@ def handleSig(conn):
             mode = "listen"
         
     if mode == "listen":
-        out.info("Listener added to :",data)
+        out.info("New Listener Started")
         listeners.append(device)
 
 def signal_check():
@@ -158,15 +162,16 @@ def signal_check():
                                             each.send(p+"/"+f+":::"+str(data))
                                     except:
                                         listeners.remove(each)
-                                        #TODO store and print ip and port
-                                        print("Lost Follower")
+                                        each.out.warning("Unable to Reach")
                     signals[p+'/'+f] = data
-        time.sleep(0.3)
         
 
 def main():
 
     masterout = lir.OutputWriter("SERVER")
+    masterout.helper()
+    print()
+    print()
 
     info = lir.Settings.ini(lir.FileSystem.home()+"/.lir/main.ini")
     PORT = int(info.get("server","port"))

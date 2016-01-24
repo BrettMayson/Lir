@@ -9,28 +9,53 @@ class Language():
 
 class OutputWriter:
     HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
+    DEBUG = '\033[94m'
+    OK = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     
-    def __init__(self,name):
+    def __init__(self,name,enc = False):
         self.name = name
+        self.enc = enc
         
     def info(self,*text):
-        print("["+self.name+"] "+OutputWriter.OKBLUE + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        print(OutputWriter.ENDC + self._name()+" " + ' '.join(map(str,text)))
+        
+    def debug(self,*text):
+        print(self._name()+" "+OutputWriter.DEBUG + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        
+    def header(self,*text):
+        print(self._name()+" "+OutputWriter.HEADER + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def warning(self, *text):
-        print("["+self.name+"] "+OutputWriter.WARNING + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        print(self._name()+" "+OutputWriter.WARNING + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def fail(self, *text):
-        print("["+self.name+"] "+OutputWriter.FAIL + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        print(self._name()+" "+OutputWriter.FAIL + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def success(self, *text):
-        print("["+self.name+"] "+OutputWriter.OKGREEN + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        print(self._name()+" "+OutputWriter.OK + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        
+    def _name(self):
+        text = ""
+        if self.enc:
+            text += OutputWriter.HEADER
+        text += "["+self.name+"]"
+        if self.enc:
+            text += OutputWriter.ENDC
+        return text
+        
+    def helper(self):
+        self.info("[Standard Connection]")
+        self.header("[Encrypted Connection]")
+        self.info("Info")
+        self.debug("Debug")
+        self.warning("Warning")
+        self.fail("Fail")
+        self.success("Success")
 
 class DataStorage():
     class Devices():
@@ -64,10 +89,13 @@ class DataStorage():
 
 class Communication():
     class Device():
-        def __init__(self,conn,key = None,encrypted = False):
+        def __init__(self,out,conn,key = None,encrypted = False):
             self.conn = conn
             self.enc = encrypted
             self.key = key
+            
+            self.peername = conn.getpeername()
+            self.out = out
             
             self.factory = Communication.AES.Factory(self.key)
             
