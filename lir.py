@@ -8,44 +8,49 @@ class Language():
         return self.data.get(secion,key)
 
 class OutputWriter:
-    HEADER = '\033[95m'
-    DEBUG = '\033[94m'
-    OK = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    DEFAULT = '\033[0m'     #END COLOR
+    HEADER = '\033[95m'     #Purple
+    DEBUG = '\033[94m'      #Blue
+    OK = '\033[92m'         #Green
+    WARNING = '\033[93m'    #Orange
+    FAIL = '\033[91m'       #Red
+    ENDC = '\033[0m'        #END COLOR
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     
-    def __init__(self,name,enc = False):
+    def __init__(self,name,enc = False,standard = DEFAULT):
         self.name = name
         self.enc = enc
+        self.standard = standard
         
     def info(self,*text):
-        print(OutputWriter.ENDC + self._name()+" " + ' '.join(map(str,text)))
+        self.write(OutputWriter.ENDC + self._name()+" " + ' '.join(map(str,text)))
         
     def debug(self,*text):
-        print(self._name()+" "+OutputWriter.DEBUG + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        self.write(self._name()+" "+OutputWriter.DEBUG + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def header(self,*text):
-        print(self._name()+" "+OutputWriter.HEADER + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        self.write(self._name()+" "+OutputWriter.HEADER + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def warning(self, *text):
-        print(self._name()+" "+OutputWriter.WARNING + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        self.write(self._name()+" "+OutputWriter.WARNING + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def fail(self, *text):
-        print(self._name()+" "+OutputWriter.FAIL + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        self.write(self._name()+" "+OutputWriter.FAIL + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
     def success(self, *text):
-        print(self._name()+" "+OutputWriter.OK + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        self.write(self._name()+" "+OutputWriter.OK + ' '.join(map(str,text)) + OutputWriter.ENDC)
         
+    def write(self,text):
+        #with open("/tmp/lir-"+self.name+".log",'a') as f:
+        #    f.write(text+"\n")
+        print(text)
+    
     def _name(self):
         text = ""
-        if self.enc:
-            text += OutputWriter.HEADER
+        text += self.standard
         text += "["+self.name+"]"
-        if self.enc:
-            text += OutputWriter.ENDC
+        text += OutputWriter.ENDC
         return text
         
     def helper(self):
@@ -127,7 +132,7 @@ class Communication():
             return self.factory.decrypt(enc,iv)
 
         def readPlain(self,n = None):
-            return Communication._readPlain(self.conn)
+            return Communication._readPlain(self.conn,n)
 
         def readLine(self):
             return Communication._readLine(self.conn)
@@ -156,7 +161,7 @@ class Communication():
                 if c != b'\r' and c != b'\n' and c != b'' and c != None:
                     data += c.decode("UTF-8")
         else:
-            data = self.readLine()
+            data = Communication._readLine(conn)
         return data
 
     def _sendPlain(conn,text):
@@ -336,6 +341,8 @@ class FileSystem():
 
     def home():
         return FileSystem.expand_path("~")
+        
+    LIR_SETTINGS = expand_path("~/.lir/main.ini")
 
 class PluginManager():
     def inject_dictionary(path,name):

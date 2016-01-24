@@ -10,7 +10,7 @@ if _version < 3.0:
 
 HOST = ''
 
-import socket,pickle
+import socket,pickle,base64
 import os,time
 #TODO replace with threading module
 from _thread import *
@@ -144,26 +144,34 @@ def handleSig(conn):
         out.info("New Listener Started")
         listeners.append(device)
 
-def signal_check():
+def executeSignal(f,p):
+    out = lir.OutputWriter("SIGNAL - "+f)
     while True:
-        for p in os.listdir(lir.FileSystem.home()+'/.lir/signals/'):
-            if os.path.isdir(lir.FileSystem.home()+'/.lir/signals/'+p):
-                for f in os.listdir(lir.FileSystem.home()+'/.lir/signals/'+p):
-                    data = execute(f,'~/.lir/signals/'+p)
-                    if data == "||pickle||":
-                        with open('/tmp/lir-pickle','rb') as fi:
-                            data = pickle.load(fi)
-                    if p+'/'+f in signals:
-                        if signals[p+'/'+f] != data:
-                            if p+'/'+f in triggers:
-                                for each in listeners:
-                                    try:
-                                        if each.conn.getpeername()[0] in triggers[p+'/'+f]:
-                                            each.send(p+"/"+f+":::"+str(data))
-                                    except:
-                                        listeners.remove(each)
-                                        each.out.warning("Unable to Reach")
-                    signals[p+'/'+f] = data
+        data = execute(f,'~/.lir/signals/'+p)
+        try:
+            datap = pickle.loads(base64.b64decode(data[2:-1]))
+            data = datap
+        except:
+            pass
+        if p+'/'+f in signals:
+            if signals[p+'/'+f] != data:
+                if p+'/'+f in triggers:
+                    for each in listeners:
+                        try:
+                            if each.conn.getpeername()[0] in triggers[p+'/'+f]:
+                                each.send(p+"/"+f+":::"+str(data))
+                        except:
+                            listeners.remove(each)
+                            each.out.warning("Unable to Reach")
+        signals[p+'/'+f] = data
+        time.sleep(0.5)
+
+def signal_check():
+    for p in os.listdir(lir.FileSystem.home()+'/.lir/signals/'):
+        if os.path.isdir(lir.FileSystem.home()+'/.lir/signals/'+p):
+            for f in os.listdir(lir.FileSystem.home()+'/.lir/signals/'+p):
+                start_new_thread(executeSignal,(f,p))
+                    
         
 
 def main():

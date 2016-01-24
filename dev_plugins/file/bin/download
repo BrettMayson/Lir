@@ -1,0 +1,84 @@
+#!/usr/bin/env python3.4
+try:
+    import socket,sys,time
+    import base64
+    import lir
+
+    info = lir.Settings.ini(lir.FileSystem.LIR_SETTINGS)
+    out = lir.OutputWriter("FILE DOWNLOAD",standard = lir.OutputWriter.DEBUG)
+
+    HOST = ''
+    PORT = int(info.get("server","port")) + 2
+
+    #Wait for connection from device
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    out.info("Created Sockets")
+
+    try:
+        s.bind((HOST,PORT))
+    except socket.error as e:
+        out.fail("Bind Failed.",e)
+        sys.exit(1)
+        
+    out.info("Bind Complete.")
+
+    s.listen(10)
+    out.success("Socket Listening on port " + str(PORT))
+
+    client, address = s.accept()
+    peer = client.getpeername()
+    ip = peer[0]
+    port = str(peer[1])
+    dout = lir.OutputWriter(ip+":"+port,standard = lir.OutputWriter.DEBUG)
+    device = lir.Communication.Device(dout,client)
+    out.info(ip)
+    dout.info("Connected")
+
+    #receive isencrypted
+    enc = device.readPlain(1)
+    out.info(enc)
+    if enc == "1":
+        #receive device id
+        did = device.readLine()
+        ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
+        ddata = ddb.getDeviceByID(did)
+        ddb.close()
+        out2 = lir.OutputWriter(device.out.name,True,lir.OutputWriter.DEBUG)
+        out2.info("Encrypted Connection")
+        device = lir.Communication.Device(out2,device.conn,ddata['key'],True)
+    #receive requested file
+    f = sys.argv[1]
+    out.info("Requested File:",f)
+    import base64
+    def pad(self,s):
+        return s + (self.BS - len(s) % self.BS) * chr(self.BS - len(s) % self.BS) 
+    if f.startswith("file://"):
+        f = f[7:]
+    #open file and encode to base64
+    with open(f,'rb') as obj:
+        fdata = obj.read()
+    data = base64.b64encode(fdata).decode("UTF-8").replace("\\n","")
+    #send size of transfer
+    device.send(str(len(data)))
+    #send file for transfer in 1024 chucks
+    fileDone = False
+    x = 0
+    jump = (1024 * 30) - 1
+    while not fileDone:
+        if x + jump < len(data):
+            device.send(base64.b64encode(fdata[x:x+jump]).decode("UTF-8").replace("\\n",""))
+        else:
+            out.warning("EOF")
+            device.send(data[x:])
+            fileDone = True
+            break
+        x += jump
+        device.out.info(x)
+    #send done code
+    device.send("||DONE||")
+    out.success("Transfer Complete")
+    device.read()
+    device.close()
+except Exception as e:
+    print(str(e))

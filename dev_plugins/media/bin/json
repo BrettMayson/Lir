@@ -2,6 +2,7 @@
 
 def main():
     import dbus,re
+    import urllib.parse
     bus = dbus.SessionBus()
 
     players = []
@@ -22,10 +23,10 @@ def main():
                 metadata['program'] = metadata['mpris:trackid'].split('/')[3]
             data = {}
             for m in metadata:
-                if m in ["xesam:artist","xesam:albumArtist","xesam:genre","comment","signature"]:
-                    data[str(m)] = str(metadata[m][0])
+                if m in ["xesam:artist","xesam:albumArtist","xesam:genre","signature"]:
+                    data[str(m)] = urllib.parse.unquote(str(metadata[m][0]))
                 else:
-                    data[str(m)] = str(metadata[m])
+                    data[str(m)] = urllib.parse.unquote(str(metadata[m]))
             #if state == "Playing":
             players.append(data)
             #else:
