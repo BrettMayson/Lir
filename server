@@ -56,6 +56,17 @@ def action(mode,data,device):
         else:
             triggers[data] = [device.conn.getpeername()[0]]
         device.out.info("Following",data)
+    elif mode == "interact":
+        device.out.info("Preparing Interaction")
+        d = os.getcwd()
+        os.chdir(lir.FileSystem.expand_path("~/.lir/bin"))
+        device.out.debug("Moved to","~/.lir/bin")
+        outs = device.conn.makefile('w', buffering=None)
+        ins = device.conn.makefile('r', buffering=None)
+        p = subprocess.Popen(data,shell=True,stdout=outs,stderr=outs,stdin=ins)
+        while p.poll() == None:
+            time.sleep(0.1)
+        device.close()
     #the message is encrypted
     elif mode == "enc":
         iv = device.readLine()
