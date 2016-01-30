@@ -7,79 +7,229 @@ if _version < 3.0:
 	exec("print \"Python 3.0 or higher is required\"")
 	sys.exit(1)
     
-import socket,platform,os,time
-
-import db
-import aes
-import connection
-import fs
-
-TEST_PHRASE = {1 : "lir is the best"}
-
-def pair(conn):
-    ddb = db.DeviceDB(fs.expand_path("~/.lir/devices.db"))
-    #Receive pairing process version number
-    version = int(connection._readPlain(conn,1))
-    print("Version:",version)
-    if version == 1:
-        #Will pair will be encrypted
-        #1 - yes
-        #0 - no
-        enc = connection._readPlain(conn,1)
-        print("Encrypted:",enc == "1")
-        device = connection.Device(conn,key,enc == "1")
-        if device.read() == TEST_PHRASE[1]:
-            print("Receive Good")
-        device.send(TEST_PHRASE[1])
-        #send hostname
-        device.send(socket.gethostname())
-        #send os
-        device.send(' '.join(platform.linux_distribution()[0:2]))
-        #receive hostname
-        host = device.read()
-        print("HOST:",host)
-        #receive os
-        _os = device.read()
-        print("OS:",_os)
-        #receive uid
-        _uid = device.read()
-        _id = ddb.addDevice({"name" : host, "key" : key, "os" : _os, "uid" : _uid})
-        print("Row ID",_id)
-        ddb.close()
+import os
+import json
+import threading
+import platform
+ 
+import lir
     
-key = None
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import GdkPixbuf
 
-def main():
-    PORT = 9040
+import socket, subprocess, re
+import urllib.request
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print("Created Socket")
-    
-    try:
-        s.bind(('',PORT))
-    except socket.error as e:
-        print ("Bind Failed.",e)
-        return False
+def get_addresses():
+    p = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE)
+    ifc_resp = p.communicate()
+    patt = re.compile(r'inet\s*\w*\S*:\s*(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    resp = patt.findall(ifc_resp[0].decode("UTF-8"))
+    for r in resp:
+        if r == "127.0.0.1":
+            resp.remove(r)
+    with urllib.request.urlopen("http://icanhazip.com") as r:
+        resp.append(r.read().decode("UTF-8").replace("\n",""))
+    return resp
+
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
+class WindowHandler():
+    def __init__(self,builder):
+        self.builder = builder
         
-    print ("Bind Complete.")
+        #page 2 - Packages
+        self.ips = Gtk.ListStore(str)
+        addresses = get_addresses()
+        for a in addresses:
+            self.ips.append([a])
+        self.tree = Gtk.TreeView.new_with_model(self.ips)
+        renderer = Gtk.CellRendererToggle()
+        for i,column_title in enumerate(["Address"]):
+            renderer = Gtk.CellRendererText()
+            column = Gtk.TreeViewColumn(column_title, renderer, text = i)
+            self.tree.append_column(column)
+            
+        self.scrolltree = self.builder.get_object("scwTreeWrapper")
+        self.scrolltree.set_vexpand(True)
+        self.scrolltree.add(self.tree)
+        self.scrolltree.show_all()
+        
+        #start
+        self.notebook = self.builder.get_object("nbkMain")
+        self.processPage()
     
-    s.listen(10)
-    print ("Socket Listening on port " + str(PORT))
+    def windowClosed(self, *args):
+        print("Closing Window")
+        Gtk.main_quit(*args)
+
+    def prevPage(self, *args):
+        self.notebook.prev_page()
+        self.processPage()
+
+    def nextPage(self, *args):
+        if self.notebook.get_current_page() == 4:
+            Gtk.main_quit()
+        self.notebook.next_page()
+        self.processPage()
     
-    global key
-    key = aes.generateRandom(16)
-    #key = "aaaaaaaaaaaaaaaa"
-    os.system("mkdir /tmp/lir")
-    os.system("qrencode -s 15 -o /tmp/lir/pair.png \""+key+"\"")
-    time.sleep(0.1)
-    os.system("xdg-open /tmp/lir/pair.png")
-    print ("Key: ",key)
+    def packageToggle(self, cell, path,model, *ignore):
+        if path is not None:
+            it = model.get_iter(path)
+            model[it][0] = not model[it][0]
+        
+    def processPage(self):
+        page = self.notebook.get_current_page()
+        if page == 0:
+            self.builder.get_object("lblTitle").set_text("Pair Device")
+            self.builder.get_object("imgBigLogo").set_from_file("interface/logo.png")
+            self.builder.get_object("lblWelcomeMessage").set_text("Welcome to Lir Device Pair Wizard\nPress 'Next' to beign.")
+        elif page == 1:
+            self.builder.get_object("lblTitle").set_text("Select Host IP")
+        elif page == 2:
+            self.builder.get_object("lblTitle").set_text("Pair on Device")
+            
+            sel = self.tree.get_selection()
+            (model, treeiter) = sel.get_selected()
+            
+            ini = lir.Settings.ini("~/.lir/main.ini")
+            
+            ip = model[treeiter][0]
+            port = int(ini.get("server","port"))
+            key = lir.Communication.AES.generateRandom(16)
+            
+            data = json.dumps({"ip" : ip, "port" : str(port), "key" : key})
+            
+            os.system("rm /tmp/lir/pair.png")
+            os.system("mkdir /tmp/lir")
+            os.system("qrencode -s 15 -o /tmp/lir/pair.png \""+data+"\"")
+            self.builder.get_object("imgQr").set_from_file("/tmp/lir/pair.png")
+            lblKey = self.builder.get_object("lblKey")
+            lblKey.set_text("Key: \t\t"+key)
+            lblHost = self.builder.get_object("lblHost")
+            lblHost.set_text("Host: \t\t"+ip)
+            lblPort = self.builder.get_object("lblPort")
+            lblPort.set_text("Port: \t\t"+str(port))
+            self.builder.get_object("btnNavRight").hide()
+            
+            process = PairProcess()
+            process.progressbar = self.builder.get_object("pgbWorking")
+            process.status = self.builder.get_object("lblWorkingMessage")
+            process.done = self.nextPage
+            process.host = ip
+            process.port = port
+            process.key = key
+            process.start()
+            
+        elif page == 3:
+            self.builder.get_object("btnNavRight").hide()
+            self.builder.get_object("lblTitle").set_text("Pairing")
+            #The progress bar doesn't do anything
+            #but things usually happen so fast it doesn't matter at this point
+            
+        elif page == 4:
+            self.builder.get_object("btnNavRight").set_label("Close")
+            self.builder.get_object("btnNavRight").show()
+            self.builder.get_object("lblTitle").set_text("Paired!")
+            self.builder.get_object("lblDoneMessage").set_text("Your device is ready to use!")
+            
+                
+class SetupWizard():
+    def __init__(self):
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file("interface/pair.glade")
+        handler = WindowHandler(self.builder)
+        self.builder.connect_signals(handler)
+        
+        self.window = self.builder.get_object("wndMain")
+        self.window.set_title("Lir Pair Wizard")
+        self.window.set_icon_from_file("interface/logo.png")
+        self.window.show()
+
+class PairProcess(threading.Thread):
     
-    con,addr = s.accept()
-    print('Connected with ' + addr[0] + ':' + str(addr[1]))
-    pair(con)
-    sys.exit(0)
+    stopthread = threading.Event()
+    
+    def run(self):
+        PORT = 9040
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        print("Created Socket")
+        
+        try:
+            s.bind(('',PORT))
+        except socket.error as e:
+            print ("Bind Failed.",e)
+            return False
+            
+        print ("Bind Complete.")
+        
+        s.listen(10)
+        print ("Socket Listening on port " + str(PORT))
+        
+        
+        conn,addr = s.accept()
+        print('Connected with ' + addr[0] + ':' + str(addr[1]))
+        Gdk.threads_enter()
+        self.done()
+        Gdk.threads_leave()
+        
+        ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
+        #Receive pairing process version number
+        version = int(lir.Communication._readPlain(conn,1))
+        print("Version:",version)
+        if version == 1:
+            #Will pair will be encrypted
+            #1 - yes
+            #0 - no
+            enc = lir.Communication._readPlain(conn,1)
+            print("Encrypted:",enc == "1")
+            device = lir.Communication.Device(conn,self.key,enc == "1")
+            #send hostname
+            device.send(socket.gethostname())
+            #send os
+            device.send(' '.join(platform.linux_distribution()[0:2]))
+            #receive hostname
+            host = device.read()
+            print("HOST:",host)
+            #receive os
+            _os = device.read()
+            print("OS:",_os)
+            #receive uid
+            _uid = device.read()
+            _id = ddb.addDevice({"name" : host, "key" : self.key, "os" : _os, "uid" : _uid})
+            print("Row ID",_id)
+            ddb.close()
+        
+        Gdk.threads_enter()
+        self.done()
+        Gdk.threads_leave()
+        
+        sys.exit(0)
+        
+def main():
+    wizard = SetupWizard()
+    Gdk.threads_init()
+    
+    Gtk.main()
     
 if __name__ == "__main__":
     main()

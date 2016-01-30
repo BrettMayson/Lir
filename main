@@ -34,7 +34,6 @@ def attemptStart(cmd,pid = None,python = True):
                     os.system(cmd+" > /dev/null &")
                     if python:
                         npid = getPid(PYTHON,cmd)
-                        print(pid)
                         with open(pid,'w') as f:
                             f.write(npid[0])
                         return 0

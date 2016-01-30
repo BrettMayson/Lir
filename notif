@@ -16,6 +16,8 @@ import lir
 
 APPINDICATOR_ID = 'Lir'
 
+PAIR        = os.getcwd()+"/"+"pair" 
+
 def main():
     indicator = appindicator.Indicator.new(APPINDICATOR_ID, lir.FileSystem.ICON, appindicator.IndicatorCategory.SYSTEM_SERVICES)
     indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
@@ -31,12 +33,19 @@ def build_menu():
     #item_settings.connect("activate",launch_settings)
     #menu.append(item_settings)
     
+    item_pair = gtk.MenuItem("Pair Device")
+    item_pair.connect("activate",launch_pair)
+    menu.append(item_pair)
+    
     item_quit = gtk.MenuItem('Quit')
     item_quit.connect('activate', quit)
     menu.append(item_quit)
     
     menu.show_all()
     return menu
+ 
+def launch_pair(source):
+    os.system(PAIR)
  
 def launch_settings(source):
     pass
