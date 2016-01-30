@@ -1,7 +1,9 @@
 #!/usr/bin/env python3.4
 
-import settings,subprocess
+import subprocess
 import os,sys,time
+
+import lir
 
 import argparse
 
@@ -12,7 +14,7 @@ parser.add_argument('--tts', type=str, dest='engine', help='specify a specific t
 args = parser.parse_args()
 
 if args.engine == None:
-    ini = settings.ini("~/.lir/main.ini")
+    ini = lir.Settings.ini("~/.lir/main.ini")
     command = ini.get("tts","engine")
 else:
     command = args.engine
@@ -41,7 +43,7 @@ for e in range(65530,40000,-400):
         subprocess.call(["pactl","set-sink-input-volume",text,str(e)])
 
 #run tts command
-subprocess.getoutput("~/.lir/tts/"+command+" \""+args.text+"\"")
+subprocess.getoutput("~/.lir/tts/"+command+" \""+args.text.replace("feat.","featuring").replace("ft.","featuring").replace("&","and")+"\"")
 
 #increase volume
 for e in range(40000,65535,400):

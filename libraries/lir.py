@@ -1,5 +1,24 @@
 #!/usr/bin/env python3.4
 
+def notify(text,body = None,icon = None,speech = None):
+    if icon == None:
+        if body == None:
+            ret = "notify/notify \""+text+"\""
+        else:
+            ret = "notify/notify \""+text+"\" -b \""+body+"\""
+    else:
+        if body == None:
+            ret = "notify/notify \""+text+"\" -i \""+icon+"\""
+        else:
+            ret = "notify/notify \""+text+"\" -b \""+body+"\" -i \""+icon+"\""
+    #TODO use config files
+    print (ret)
+    with Communication.Connection("localhost",8090) as c:
+        c.command(ret)
+    if speech != None:
+        with Output.Speech() as s:
+            s.say(speech)
+
 class Language():
     def __init__(self,lang = 'en'):
         self.data = Settings.ini("langs/"+lang)
@@ -7,60 +26,78 @@ class Language():
     def get(section,key):
         return self.data.get(secion,key)
 
-class OutputWriter:
-    DEFAULT = '\033[0m'     #END COLOR
-    HEADER = '\033[95m'     #Purple
-    DEBUG = '\033[94m'      #Blue
-    OK = '\033[92m'         #Green
-    WARNING = '\033[93m'    #Orange
-    FAIL = '\033[91m'       #Red
-    ENDC = '\033[0m'        #END COLOR
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    
-    def __init__(self,name,enc = False,standard = DEFAULT):
-        self.name = name
-        self.enc = enc
-        self.standard = standard
+class Output:
+    class Speech:
+        def __init__(self):
+            #TODO use config files
+            self.ip = "localhost"
+            self.port = 8090
+            
+            self.connection = Communication.Connection(self.ip,self.port)
+            
+        def __enter__(self):
+            return self
+            
+        def __exit__(self, t,v,tr):
+            self.connection.close()
         
-    def info(self,*text):
-        self.write(OutputWriter.ENDC + self._name()+" " + ' '.join(map(str,text)))
+        def say(self,text):
+            self.connection.command("say/say \""+text+"\"")
+            
+    class Writer:
+        DEFAULT = '\033[0m'     #END COLOR
+        HEADER = '\033[95m'     #Purple
+        DEBUG = '\033[94m'      #Blue
+        OK = '\033[92m'         #Green
+        WARNING = '\033[93m'    #Orange
+        FAIL = '\033[91m'       #Red
+        ENDC = '\033[0m'        #END COLOR
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
         
-    def debug(self,*text):
-        self.write(self._name()+" "+OutputWriter.DEBUG + ' '.join(map(str,text)) + OutputWriter.ENDC)
+        def __init__(self,name,enc = False,standard = DEFAULT):
+            self.name = name
+            self.enc = enc
+            self.standard = standard
+            
+        def info(self,*text):
+            self.write(Output.Writer.ENDC + self._name()+" " + ' '.join(map(str,text)))
+            
+        def debug(self,*text):
+            self.write(self._name()+" "+Output.Writer.DEBUG + ' '.join(map(str,text)) + Output.Writer.ENDC)
+            
+        def header(self,*text):
+            self.write(self._name()+" "+Output.Writer.HEADER + ' '.join(map(str,text)) + Output.Writer.ENDC)
+            
+        def warning(self, *text):
+            self.write(self._name()+" "+Output.Writer.WARNING + ' '.join(map(str,text)) + Output.Writer.ENDC)
+            
+        def fail(self, *text):
+            self.write(self._name()+" "+Output.Writer.FAIL + ' '.join(map(str,text)) + Output.Writer.ENDC)
+            
+        def success(self, *text):
+            self.write(self._name()+" "+Output.Writer.OK + ' '.join(map(str,text)) + Output.Writer.ENDC)
+            
+        def write(self,text):
+            #with open("/tmp/lir-"+self.name+".log",'a') as f:
+            #    f.write(text+"\n")
+            print(text)
         
-    def header(self,*text):
-        self.write(self._name()+" "+OutputWriter.HEADER + ' '.join(map(str,text)) + OutputWriter.ENDC)
-        
-    def warning(self, *text):
-        self.write(self._name()+" "+OutputWriter.WARNING + ' '.join(map(str,text)) + OutputWriter.ENDC)
-        
-    def fail(self, *text):
-        self.write(self._name()+" "+OutputWriter.FAIL + ' '.join(map(str,text)) + OutputWriter.ENDC)
-        
-    def success(self, *text):
-        self.write(self._name()+" "+OutputWriter.OK + ' '.join(map(str,text)) + OutputWriter.ENDC)
-        
-    def write(self,text):
-        #with open("/tmp/lir-"+self.name+".log",'a') as f:
-        #    f.write(text+"\n")
-        print(text)
-    
-    def _name(self):
-        text = ""
-        text += self.standard
-        text += "["+self.name+"]"
-        text += OutputWriter.ENDC
-        return text
-        
-    def helper(self):
-        self.info("[Standard Connection]")
-        self.header("[Encrypted Connection]")
-        self.info("Info")
-        self.debug("Debug")
-        self.warning("Warning")
-        self.fail("Fail")
-        self.success("Success")
+        def _name(self):
+            text = ""
+            text += self.standard
+            text += "["+self.name+"]"
+            text += Output.Writer.ENDC
+            return text
+            
+        def helper(self):
+            self.info("[Standard Connection]")
+            self.header("[Encrypted Connection]")
+            self.info("Info")
+            self.debug("Debug")
+            self.warning("Warning")
+            self.fail("Fail")
+            self.success("Success")
 
 class DataStorage():
     class Devices():
@@ -167,6 +204,29 @@ class Communication():
     def _sendPlain(conn,text):
         conn.sendall(text.encode("UTF-8") + b'\n')
 
+    class Connection():
+        def __init__(self,ip,port):
+            self.ip = ip
+            self.port = int(port)
+            
+            import socket
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((self.ip,self.port))
+            
+        def __enter__(self):
+            return self
+            
+        def __exit__(self, type, value, traceback):
+            self.close()
+            
+        def command(self,cmd):
+            self.socket.send(("direct:"+cmd).encode("UTF-8"))
+                
+        def speech(self,cmd):
+            self.socket.send(("speech:"+cmd).encode("UTF-8"))
+            
+        def close(self):
+            self.socket.close()
 
     class AES():
         class Factory():

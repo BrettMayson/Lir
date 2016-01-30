@@ -28,10 +28,10 @@ def main():
 	            title = metadata[each]
             elif each == "mpris:artUrl":
                 cover = metadata[each]
-        lir.display_notification(title,"Artist: "+artist+"\r\nAlbum: "+album,cover,title+" by "+artist)
+        lir.notify(title,"by '"+artist+"' from '"+album+"'",cover,title+" by "+artist)
         print(title+" by "+artist)
     else:
-	    lir.display_notification("Nothing Playing",speech=False)
+	    lir.notify("Nothing Playing")
 	    print("Nothing Playing")
     
 if __name__ == "__main__":
