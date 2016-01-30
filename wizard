@@ -186,7 +186,7 @@ class Installer(threading.Thread):
         ini.set("general","language",self.language)
         ini.create_section("tts")
         #ini.set("tts","engine","espeak/espeak")
-        ini.set("tts","engine","natural-tts/natural-tts")
+        ini.set("tts","engine","flite/flite-say")
         ini.set("tts","read-responses","True")
         ini.save()
         

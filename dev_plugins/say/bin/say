@@ -43,7 +43,7 @@ for e in range(65530,40000,-400):
         subprocess.call(["pactl","set-sink-input-volume",text,str(e)])
 
 #run tts command
-subprocess.getoutput("~/.lir/tts/"+command+" \""+args.text.replace("feat.","featuring").replace("ft.","featuring").replace("&","and")+"\"")
+subprocess.getoutput("~/.lir/tts/"+command+" \""+args.text.lower().replace("feat.","featuring").replace("ft.","featuring").replace("&","and")+"\"")
 
 #increase volume
 for e in range(40000,65535,400):

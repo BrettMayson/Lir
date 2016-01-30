@@ -437,7 +437,12 @@ class PluginManager():
                     return False
         for dic in os.listdir("/tmp/lir/actions"):
             if os.path.isdir("/tmp/lir/actions/"+dic):
-                PluginManager.inject_dictionary("/tmp/lir/actions/"+dic,info.get("info","name"))
+                PluginManager.inject_dictionary("/tmp/lir/actions/"+dic,info.get("info","name"))  
+        if os.path.exists("/tmp/lir/install"):
+            d = os.getcwd()
+            os.chdir("/tmp/lir/")
+            os.system("./install")
+            os.chdir(d)
         FileSystem.delete("/tmp/lir")
         return True
         
@@ -458,4 +463,9 @@ class PluginManager():
             for dic in os.listdir(path+"/actions"):
                 if os.path.isdir(path+"/actions/"+dic):
                     PluginManager.inject_dictionary(path+"/actions/"+dic,info.get("info","name"))
+        if os.path.exists(path+"/install"):
+            d = os.getcwd()
+            os.chdir(path)
+            os.system("./install")
+            os.chdir(d)
         return True

@@ -1,0 +1,7 @@
+#!/bin/bash
+mkdir /tmp/lir_TTS
+rm /tmp/lir_TTS/read.wav
+cd ~/.lir/tts/flite
+./flite -voice voices/cmu_us_slt.flitevox -t "$1" -o /tmp/lir_TTS/out.wav
+ffmpeg -i /tmp/lir_TTS/out.wav -af "volume=2" /tmp/lir_TTS/read.wav
+aplay /tmp/lir_TTS/read.wav > /dev/null
