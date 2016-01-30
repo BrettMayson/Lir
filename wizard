@@ -270,7 +270,6 @@ class Installer(threading.Thread):
 def main():
     wizard = SetupWizard()
     Gdk.threads_init()
-    
     Gtk.main()
     
 if __name__ == "__main__":

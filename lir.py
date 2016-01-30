@@ -256,6 +256,9 @@ class Settings():
 
 class FileSystem():
     DEBUG = False
+    import os
+    ICON = os.getcwd() + "/interface/logo.png"
+    print(ICON)
 
     def debug(*text):
         if FileSystem.DEBUG:

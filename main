@@ -8,6 +8,7 @@ import lir
 PYTHON = "python3.4"
 
 SERVER      = os.getcwd()+"/"+"server"
+NOTIF       = os.getcwd()+"/"+"notif"
 PAIR        = os.getcwd()+"/"+"pair"
 WIZARD      = os.getcwd()+"/"+"wizard"
 SETTINGS    = None
@@ -33,6 +34,7 @@ def attemptStart(cmd,pid = None,python = True):
                     os.system(cmd+" > /dev/null &")
                     if python:
                         npid = getPid(PYTHON,cmd)
+                        print(pid)
                         with open(pid,'w') as f:
                             f.write(npid[0])
                         return 0
@@ -65,13 +67,20 @@ def main():
     if os.path.exists(FIRST_RUN):
         #TODO start notification service
         #start server
-        server = attemptStart(SERVER,LIR_FOLDER+"/.server.pid")
+        server = attemptStart(SERVER,LIR_FOLDER+".server.pid")
+        notif = attemptStart(NOTIF,LIR_FOLDER+".notif.pid")
         if server == 0:
             print("Server started! PID:",getPid(PYTHON,SERVER)[0])
         elif server == 2:
             print("Server appears to be running! PID:",getPid(PYTHON,SERVER)[0])
         elif server == 1:
             print("Server already running! PID:",getPid(PYTHON,SERVER)[0])
+        if notif == 0:
+            print("Notif started! PID:",getPid(PYTHON,NOTIF)[0])
+        elif notif == 2:
+            print("Notif appears to be running! PID:",getPid(PYTHON,NOTIF)[0])
+        elif notif == 1:
+            print("Notif already running! PID:",getPid(PYTHON,NOTIF)[0])
     else:
         #start wizard
         wizard = attemptStart(WIZARD)
