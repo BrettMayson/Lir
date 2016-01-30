@@ -17,7 +17,10 @@ while True:
         elif ny == "r":
             os.system("xdotool click 3")
     elif nx == "s":
-        pass
+        if ny == "u":
+            os.system("xdotool click 4")
+        elif ny == "d":
+            os.system("xdotool click 5")
     else:
         nx = int(float(nx))
         ny = int(float(ny))
