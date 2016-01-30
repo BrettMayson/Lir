@@ -7,7 +7,7 @@ if _version < 3.0:
 	exec("print \"Python 3.0 or higher is required\"")
 	sys.exit(1)
     
-import subprocess
+import subprocess as sp
 
 try:
     import lir
