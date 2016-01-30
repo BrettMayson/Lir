@@ -190,7 +190,8 @@ class Installer(threading.Thread):
         lir.FileSystem.delete("dictionary")
         lir.FileSystem.system("make")
         os.chdir("../")
-        lir.FileSystem.copy("dictionary/dictionary","~/.lir/dictionary")
+        lir.FileSystem.copy("dictionary/dictionary","~/.lir/")
+        os.system(lir.FileSystem.expand_path("chmod +x ~/.lir/"))
         
         Gdk.threads_enter()
         self.status.set_text("Gathering Dependency Information")

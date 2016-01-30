@@ -37,7 +37,11 @@ def action(mode,data,device):
     if mode == "speech":
         #TODO dictionaries active when certain programs running
         #TODO dictionaries active when certain programs focused
-        device.send(execute(subprocess.getoutput(lir.FileSystem.home()+"/.lir/dictionary \""+data+"\" "+lir.FileSystem.home()+"/.lir/actions/default.dic")) + "\n")
+        cmd = subprocess.getoutput(lir.FileSystem.home()+"/.lir/dictionary \""+data+"\" "+lir.FileSystem.home()+"/.lir/actions/default.dic")
+        device.out.debug(cmd)
+        outp = execute(cmd)
+        device.out.debug(outp)
+        device.send(outp + "\n")
     #a direct command to be ran
     elif mode == "direct":
         device.out.info("Executing",data)
@@ -111,6 +115,7 @@ def handle(conn):
     out = lir.OutputWriter(ip+":"+port)
     out.success("Connected")
     resp(conn,out)
+    conn.close()
     out.warning("Disconnected")
 
 def handleSig(conn):
