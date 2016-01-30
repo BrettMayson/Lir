@@ -3,7 +3,14 @@
 import os
 import subprocess as sp
 
-import lir
+try:
+    import lir
+except:
+    os.chdir("libraries")
+    print("Installing Lir Python Module")
+    sp.getoutput("sudo python3 setup.py install")
+    os.chdir("../")
+    import lir
 
 PYTHON = "python3.4"
 

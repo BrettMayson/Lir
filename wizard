@@ -7,15 +7,24 @@ if _version < 3.0:
 	exec("print \"Python 3.0 or higher is required\"")
 	sys.exit(1)
     
-import os,configparser,pwd
+import subprocess
+
+try:
+    import lir
+except:
+    os.chdir("libraries")
+    print("Installing Lir Python Module")
+    sp.getoutput("sudo python3 setup.py install")
+    os.chdir("../")
+    import lir
+    
+import configparser,pwd,os
 
 import threading
 
 #import package_manager as pm
 #import settings
 #import fs
-
-import lir
     
 from gi.repository import Gtk
 from gi.repository import Gdk
@@ -191,7 +200,7 @@ class Installer(threading.Thread):
         lir.FileSystem.system("make")
         os.chdir("../")
         lir.FileSystem.copy("dictionary/dictionary","~/.lir/")
-        os.system(lir.FileSystem.expand_path("chmod +x ~/.lir/"))
+        os.system("chmod +x ~/.lir/dictionary")
         
         Gdk.threads_enter()
         self.status.set_text("Gathering Dependency Information")
