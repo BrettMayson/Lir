@@ -2,7 +2,7 @@
 rm /tmp/lir_flite -r
 mkdir /tmp/lir_flite
 cd /tmp/lir_flite/
-wget http://www.festvox.org/flite/packed/flite-2.0/flite-2.0.0-release.tar.bz2
+#wget http://www.festvox.org/flite/packed/flite-2.0/flite-2.0.0-release.tar.bz2
 tar jxf /tmp/lir_flite/flite-2.0.0-release.tar.bz2
 cd flite-2.0.0-release
 ./configure
@@ -11,4 +11,4 @@ cp bin/flite ~/.lir/tts/flite/flite
 cd ~/.lir/tts/flite
 mkdir voices
 cd voices
-wget http://www.festvox.org/flite/packed/flite-2.0/voices/cmu_us_slt.flitevox
+#wget http://www.festvox.org/flite/packed/flite-2.0/voices/cmu_us_slt.flitevox

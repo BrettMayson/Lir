@@ -1,0 +1,27 @@
+#!/usr/bin/env python3.4
+import sys
+import os
+
+try:
+    data = open("mousepos")
+    ox,oy = data.read().replace("\n","").split(",")
+    data.close()
+except:
+    ox = -10000
+    oy = -10000
+
+nx = sys.argv[1]
+ny = sys.argv[2]
+ox = int(str(ox))
+nx = int(float(nx))
+oy = int(str(oy))
+ny = int(float(ny))
+print(nx,ny)
+if nx - ox > 50 or nx - ox < -50 or ny - oy > 50 or ny - oy < -50:
+    print("Finger Moved!")
+else:
+    os.system("xdotool mousemove_relative -- "+str((nx - ox) * 2)+" "+str((ny - oy) * 2))
+
+data = open("mousepos",'w')
+data.write(str(nx)+","+str(ny))
+data.close()
