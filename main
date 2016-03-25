@@ -38,6 +38,7 @@ def attemptStart(cmd,pid = None,python = True):
                         #different running
                         return 2
                 else:
+                    print("Starting: ",cmd)
                     os.system(cmd+" > /dev/null &")
                     if python:
                         npid = getPid(PYTHON,cmd)

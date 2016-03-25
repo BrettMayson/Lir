@@ -5,7 +5,7 @@ try:
     import lir
 
     info = lir.Settings.ini(lir.FileSystem.LIR_SETTINGS)
-    out = lir.OutputWriter("FILE DOWNLOAD",standard = lir.OutputWriter.DEBUG)
+    out = lir.Output.Writer("FILE DOWNLOAD",standard = lir.Output.Writer.DEBUG)
 
     HOST = ''
     PORT = int(info.get("server","port")) + 2
@@ -30,7 +30,7 @@ try:
     peer = client.getpeername()
     ip = peer[0]
     port = str(peer[1])
-    dout = lir.OutputWriter(ip+":"+port,standard = lir.OutputWriter.DEBUG)
+    dout = lir.Output.Writer(ip+":"+port,standard = lir.Output.Writer.DEBUG)
     device = lir.Communication.Device(dout,client)
     out.info(ip)
     dout.info("Connected")
@@ -44,7 +44,7 @@ try:
         ddb = lir.DataStorage.Devices(lir.FileSystem.expand_path("~/.lir/devices.db"))
         ddata = ddb.getDeviceByID(did)
         ddb.close()
-        out2 = lir.OutputWriter(device.out.name,True,lir.OutputWriter.DEBUG)
+        out2 = lir.Output.Writer(device.out.name,True,lir.Output.Writer.DEBUG)
         out2.info("Encrypted Connection")
         device = lir.Communication.Device(out2,device.conn,ddata['key'],True)
     #receive requested file

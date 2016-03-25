@@ -131,7 +131,7 @@ class DataStorage():
 
 class Communication():
     class Device():
-        def __init__(self,out,conn,key = None,encrypted = False):
+        def __init__(self,out=None,conn=None,key = None,encrypted = False):
             self.conn = conn
             self.enc = encrypted
             self.key = key

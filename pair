@@ -202,7 +202,7 @@ class PairProcess(threading.Thread):
             #0 - no
             enc = lir.Communication._readPlain(conn,1)
             print("Encrypted:",enc == "1")
-            device = lir.Communication.Device(conn,self.key,enc == "1")
+            device = lir.Communication.Device(None,conn,self.key,enc == "1")
             #send hostname
             device.send(socket.gethostname())
             #send os
