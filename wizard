@@ -12,6 +12,7 @@ import subprocess as sp
 try:
     import lir
 except:
+    import os
     os.chdir("libraries")
     print("Installing Lir Python Module")
     sp.getoutput("sudo python3 setup.py install")
